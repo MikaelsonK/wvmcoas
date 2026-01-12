@@ -29,6 +29,7 @@ export default async function GradingSheetPage({ params }: { params: { periodId:
     include: { residentProfile: true },
     orderBy: { name: "asc" },
   });
+  type ResidentRow = (typeof residents)[number];
 
   const evaluations = await prisma.evaluation.findMany({
     where: { periodId: params.periodId },
@@ -55,7 +56,7 @@ export default async function GradingSheetPage({ params }: { params: { periodId:
     totalsByResident.set(e.residentId, cur);
   }
 
-  const rows: Row[] = residents.map((r) => {
+  const rows: Row[] = residents.map((r: ResidentRow) => {
     const t = totalsByResident.get(r.id) ?? { count: 0, points: 0 };
     return {
       residentId: r.id,
