@@ -1,0 +1,106 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  // directUrl = env("DIRECT_URL")
+}
+
+enum Role {
+  ADMIN
+  EVALUATOR
+  RESIDENT
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  residentProfile  ResidentProfile?
+  evaluatorProfile EvaluatorProfile?
+
+  evaluationsGiven Evaluation[] @relation("EvaluationsGiven")
+  evaluationsFor   Evaluation[] @relation("EvaluationsFor")
+}
+
+model ResidentProfile {
+  id        String @id @default(cuid())
+  userId    String @unique
+  yearLevel Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model EvaluatorProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Period {
+  id        String   @id @default(cuid())
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  createdAt DateTime @default(now())
+
+  evaluations Evaluation[]
+}
+
+model Form {
+  id        String     @id @default(cuid())
+  title     String
+  createdAt DateTime   @default(now())
+
+  questions   Question[]
+  evaluations Evaluation[]
+}
+
+model Question {
+  id        String @id @default(cuid())
+  formId    String
+  label     String
+  maxPoints Int
+
+  form   Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
+  scores Score[]
+}
+
+model Evaluation {
+  id          String   @id @default(cuid())
+  evaluatorId String
+  residentId  String
+  periodId    String
+  formId      String
+  submittedAt DateTime @default(now())
+
+  evaluator User   @relation("EvaluationsGiven", fields: [evaluatorId], references: [id], onDelete: Restrict)
+  resident  User   @relation("EvaluationsFor", fields: [residentId], references: [id], onDelete: Restrict)
+  period    Period @relation(fields: [periodId], references: [id], onDelete: Restrict)
+  form      Form   @relation(fields: [formId], references: [id], onDelete: Restrict)
+
+  scores Score[]
+
+  @@index([residentId, periodId])
+  @@index([periodId])
+}
+
+model Score {
+  id           String @id @default(cuid())
+  evaluationId String
+  questionId   String
+  points       Int
+
+  evaluation Evaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+  question   Question   @relation(fields: [questionId], references: [id], onDelete: Restrict)
+
+  @@unique([evaluationId, questionId])
+}
