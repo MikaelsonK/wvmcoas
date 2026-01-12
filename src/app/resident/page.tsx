@@ -12,6 +12,7 @@ export default async function ResidentPage() {
   const { userId } = await requireRole(["RESIDENT"]);
 
   const periods = await prisma.period.findMany({ orderBy: { startDate: "desc" } });
+  type PeriodRow = (typeof periods)[number];
 
   const evaluations = await prisma.evaluation.findMany({
     where: { residentId: userId },
@@ -36,7 +37,7 @@ export default async function ResidentPage() {
     totalsByPeriod.set(e.periodId, cur);
   }
 
-  const summary: PeriodSummary[] = periods.map((p) => {
+  const summary: PeriodSummary[] = periods.map((p: PeriodRow) => {
     const t = totalsByPeriod.get(p.id) ?? { count: 0, points: 0 };
     return { periodId: p.id, name: p.name, evaluationsCount: t.count, totalPoints: t.points };
   });
