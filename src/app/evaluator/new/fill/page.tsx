@@ -20,6 +20,8 @@ export default async function FillEvaluationPage({
 
   if (!resident || !period || !form) redirect("/evaluator/new");
 
+  type QuestionRow = (typeof form.questions)[number];
+
   return (
     <div className="card">
       <h1>Fill Evaluation</h1>
@@ -34,7 +36,7 @@ export default async function FillEvaluationPage({
         <input type="hidden" name="periodId" value={periodId} />
         <input type="hidden" name="formId" value={formId} />
 
-        {form.questions.map((q) => (
+        {form.questions.map((q: QuestionRow) => (
           <div key={q.id} style={{ marginBottom: 12 }}>
             <label>{q.label} (0..{q.maxPoints})</label>
             <input name={`q_${q.id}`} type="number" min={0} max={q.maxPoints} required />
