@@ -9,6 +9,8 @@ export default async function AdminPeriodsPage() {
     orderBy: { startDate: "desc" },
   });
 
+  type PeriodRow = (typeof periods)[number];
+
   return (
     <div className="card">
       <h1>Periods</h1>
@@ -37,7 +39,7 @@ export default async function AdminPeriodsPage() {
           <tr><th>Name</th><th>Start</th><th>End</th><th>Grading</th></tr>
         </thead>
         <tbody>
-          {periods.map((p) => (
+          {periods.map((p: PeriodRow) => (
             <tr key={p.id}>
               <td>{p.name}</td>
               <td>{p.startDate.toISOString().slice(0, 10)}</td>
