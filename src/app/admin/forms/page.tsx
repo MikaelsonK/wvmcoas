@@ -5,9 +5,16 @@ export default async function AdminFormsPage() {
   await requireRole(["ADMIN"]);
 
   const forms = await prisma.form.findMany({
-    include: { questions: true },
+    select: {
+      id: true,
+      title: true,
+      questions: { select: { id: true } },
+    },
     orderBy: { createdAt: "desc" },
   });
+
+  type FormRow = (typeof forms)[number];
+
 
   return (
     <div className="card">
@@ -44,7 +51,7 @@ export default async function AdminFormsPage() {
           <tr><th>Title</th><th># Questions</th></tr>
         </thead>
         <tbody>
-          {forms.map((f) => (
+          {forms.map((f: FormRow) => (
             <tr key={f.id}>
               <td>{f.title}</td>
               <td>{f.questions.length}</td>
