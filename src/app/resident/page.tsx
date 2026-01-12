@@ -17,10 +17,11 @@ export default async function ResidentPage() {
     where: { residentId: userId },
     select: { id: true, periodId: true },
   });
+  type EvaluationRow = (typeof evaluations)[number];
 
   const sums = await prisma.score.groupBy({
     by: ["evaluationId"],
-    where: { evaluationId: { in: evaluations.map((e) => e.id) } },
+    where: { evaluationId: { in: evaluations.map((e: EvaluationRow) => e.id) } },
     _sum: { points: true },
   });
 
