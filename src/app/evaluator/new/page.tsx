@@ -8,6 +8,8 @@ export default async function NewEvaluationPage() {
   const periods = await prisma.period.findMany({ orderBy: { startDate: "desc" } });
   const forms = await prisma.form.findMany({ include: { questions: true }, orderBy: { createdAt: "desc" } });
 
+  type ResidentRow = (typeof residents)[number];
+
   return (
     <div className="card">
       <h1>New Evaluation</h1>
@@ -18,7 +20,9 @@ export default async function NewEvaluationPage() {
             <label>Resident</label>
             <select name="residentId" required>
               <option value="">Select...</option>
-              {residents.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+              {residents.map((r: ResidentRow) => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
             </select>
           </div>
           <div className="col">
