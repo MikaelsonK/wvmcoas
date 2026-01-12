@@ -1,11 +1,17 @@
-import type { User } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { requireRole } from "@/lib/requireRole";
 import { prisma } from "@/lib/prisma";
 
 export default async function AdminEvaluatorsPage() {
   await requireRole(["ADMIN"]);
 
-  const evaluators: User[] = await prisma.user.findMany({ where: { role: "EVALUATOR" } });
+  const evaluators: Prisma.UserGetPayload<{
+    select: { id: true; name: true; email: true };
+  }>[] = await prisma.user.findMany({
+    select: { id: true, name: true, email: true },
+    where: { role: "EVALUATOR" },
+    orderBy: { createdAt: "desc" },
+  });
 
 
   return (
@@ -36,7 +42,7 @@ export default async function AdminEvaluatorsPage() {
           <tr><th>Name</th><th>Email</th></tr>
         </thead>
         <tbody>
-          {evaluators.map((e: User) => (
+          {evaluators.map((e: (typeof evaluators)[number]) => (
             <tr key={e.id}>
               <td>{e.name}</td>
               <td>{e.email}</td>
