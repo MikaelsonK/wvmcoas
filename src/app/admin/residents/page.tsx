@@ -10,6 +10,9 @@ export default async function AdminResidentsPage() {
     orderBy: { name: "asc" },
   });
 
+  type ResidentRow = (typeof residents)[number];
+
+
   return (
     <div className="card">
       <h1>Residents</h1>
@@ -42,7 +45,7 @@ export default async function AdminResidentsPage() {
           <tr><th>Name</th><th>Email</th><th>Year</th></tr>
         </thead>
         <tbody>
-          {residents.map((r) => (
+          {residents.map((r: ResidentRow) => (
             <tr key={r.id}>
               <td>{r.name}</td>
               <td>{r.email}</td>
