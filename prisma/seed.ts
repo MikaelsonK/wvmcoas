@@ -2,6 +2,8 @@ import { Question } from "@prisma/client";
 import { prisma } from "../src/lib/prisma";
 import { hashPassword } from "../src/lib/password";
 
+type QuestionRow = { id: string };
+
 function requireEnv(name: string): string {
   const v = process.env[name];
   if (!v || v.length === 0) throw new Error(`Missing env var: ${name}`);
@@ -76,10 +78,11 @@ async function main() {
       periodId: period.id,
       formId: form.id,
       scores: {
-        create: form.questions.map((q: Question, idx: number) => ({
+        create: form.questions.map((q: QuestionRow, idx: number) => ({
           questionId: q.id,
           points: idx === 0 ? 8 : idx === 1 ? 9 : 10,
         })),
+
       },
 
     },
