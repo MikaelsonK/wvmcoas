@@ -35,9 +35,12 @@ export default async function GradingSheetPage({ params }: { params: { periodId:
     select: { id: true, residentId: true },
   });
 
+  type EvaluationRow = (typeof evaluations)[number];
+
+
   const scoreSums = await prisma.score.groupBy({
     by: ["evaluationId"],
-    where: { evaluationId: { in: evaluations.map((e) => e.id) } },
+    where: { evaluationId: { in: evaluations.map((e: EvaluationRow) => e.id) } },
     _sum: { points: true },
   });
 
