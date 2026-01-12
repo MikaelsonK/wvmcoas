@@ -1,4 +1,3 @@
-import { Question } from "@prisma/client";
 import { prisma } from "../src/lib/prisma";
 import { hashPassword } from "../src/lib/password";
 
