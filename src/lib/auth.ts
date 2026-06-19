@@ -14,7 +14,7 @@ type AuthUser = {
   id: string;
   email: string;
   name: string;
-  role: "ADMIN" | "EVALUATOR" | "RESIDENT";
+  role: "ADMIN" | "EVALUATOR" | "RESIDENT" | "STAFF";
 };
 
 function isAuthUser(u: unknown): u is AuthUser {
@@ -31,7 +31,7 @@ function isAuthUser(u: unknown): u is AuthUser {
     typeof id === "string" &&
     typeof email === "string" &&
     typeof name === "string" &&
-    (role === "ADMIN" || role === "EVALUATOR" || role === "RESIDENT")
+    (role === "ADMIN" || role === "EVALUATOR" || role === "RESIDENT" || role === "STAFF")
   );
 }
 
@@ -83,7 +83,7 @@ export const authOptions: NextAuthOptions = {
       const tokenUserId = token.userId;
       const tokenRole = token.role;
 
-      if (typeof tokenUserId === "string" && (tokenRole === "ADMIN" || tokenRole === "EVALUATOR" || tokenRole === "RESIDENT")) {
+      if (typeof tokenUserId === "string" && (tokenRole === "ADMIN" || tokenRole === "EVALUATOR" || tokenRole === "RESIDENT" || tokenRole === "STAFF")) {
         session.user.id = tokenUserId;
         session.user.role = tokenRole;
       }

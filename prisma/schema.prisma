@@ -12,6 +12,13 @@ enum Role {
   ADMIN
   EVALUATOR
   RESIDENT
+  STAFF
+}
+
+enum EvaluationStatus {
+  PENDING
+  DRAFT
+  SUBMITTED
 }
 
 model User {
@@ -58,17 +65,22 @@ model Period {
 model Form {
   id        String     @id @default(cuid())
   title     String
+  domainId  String?    
   createdAt DateTime   @default(now())
 
   questions   Question[]
   evaluations Evaluation[]
+
+  domain Domain? @relation(fields: [domainId], references: [id])
 }
 
 model Question {
-  id        String @id @default(cuid())
-  formId    String
-  label     String
-  maxPoints Int
+  id           String @id @default(cuid())
+  formId       String
+  label        String
+  maxPoints    Int
+  weight       Float? 
+  questionType String? // e.g., "single_select", "multi_select", "text"
 
   form   Form    @relation(fields: [formId], references: [id], onDelete: Cascade)
   scores Score[]
@@ -81,6 +93,7 @@ model Evaluation {
   periodId    String
   formId      String
   submittedAt DateTime @default(now())
+  status      EvaluationStatus @default(DRAFT)
 
   evaluator User   @relation("EvaluationsGiven", fields: [evaluatorId], references: [id], onDelete: Restrict)
   resident  User   @relation("EvaluationsFor", fields: [residentId], references: [id], onDelete: Restrict)
@@ -103,4 +116,37 @@ model Score {
   question   Question   @relation(fields: [questionId], references: [id], onDelete: Restrict)
 
   @@unique([evaluationId, questionId])
+}
+
+model Domain {
+  id           String   @id @default(cuid())
+  name         String
+  parentId     String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parent        Domain?  @relation("DomainHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
+  children      Domain[] @relation("DomainHierarchy")
+  forms         Form[]
+
+  @@index([parentId])
+}
+
+model ProcedureType {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  procedures Procedure[]
+}
+
+model Procedure {
+  id              String       @id @default(cuid())
+  name            String
+  procedureTypeId String
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  type            ProcedureType @relation(fields: [procedureTypeId], references: [id], onDelete: Cascade)
 }
