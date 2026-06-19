@@ -3,6 +3,8 @@
  * Uses the NextAuth session to verify user authentication and role
  */
 
+import { cookies } from "next/headers";
+
 export type UserRole = "ADMIN" | "EVALUATOR" | "RESIDENT" | "STAFF";
 
 export interface AuthGuardResult {
@@ -26,7 +28,8 @@ export async function checkAuth(): Promise<AuthGuardResult> {
     // This uses your existing authOptions from @/lib/auth
     
     // For NextAuth v5 with JWT strategy, session comes from cookies
-    const sessionCookie = cookies().get('next-auth.session-token')?.value;
+    const cookieStore = await cookies();
+    const sessionCookie = cookieStore.get('next-auth.session-token')?.value;
     
     if (!sessionCookie) {
       return {
@@ -103,12 +106,14 @@ function decodeJwt(token: string): any {
 /**
  * Helper to redirect users if not authenticated
  */
-export function requireAuth(redirectUrl: string): void {
+export async function requireAuth(redirectUrl: string): Promise<void> {
   // This should be called before protected route execution
-  const authResult = checkAuth();
+  const authResult = await checkAuth();
   
   if (!authResult.isAuthenticated) {
-    window.location.href = `${window.location.origin}${redirectUrl}`;
+    if (typeof window !== "undefined") {
+      window.location.href = `${window.location.origin}${redirectUrl}`;
+    }
     throw new Error(`Redirecting to ${redirectUrl}`);
   }
 }

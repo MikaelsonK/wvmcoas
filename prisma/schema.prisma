@@ -27,6 +27,7 @@ model User {
   name         String
   passwordHash String
   role         Role
+  contactNo    String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -35,6 +36,7 @@ model User {
 
   evaluationsGiven Evaluation[] @relation("EvaluationsGiven")
   evaluationsFor   Evaluation[] @relation("EvaluationsFor")
+  procedureLogs    ProcedureLog[] @relation("ResidentProcedureLogs")
 }
 
 model ResidentProfile {
@@ -46,8 +48,9 @@ model ResidentProfile {
 }
 
 model EvaluatorProfile {
-  id     String @id @default(cuid())
-  userId String @unique
+  id          String  @id @default(cuid())
+  userId      String  @unique
+  designation String? // e.g. "CONSULTANT" or "TRAINING_OFFICER"
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
@@ -149,4 +152,48 @@ model Procedure {
   updatedAt       DateTime     @updatedAt
 
   type            ProcedureType @relation(fields: [procedureTypeId], references: [id], onDelete: Cascade)
+  logs            ProcedureLog[]
+}
+
+model ProcedureLog {
+  id             String    @id @default(cuid())
+  residentId     String
+  procedureId    String
+  loggedAt       DateTime  @default(now())
+  status         String    @default("COMPLETED")
+  patientHRN     String
+  patientName    String?
+  patientAge     Int?
+  patientGender  String?
+
+  resident  User      @relation("ResidentProcedureLogs", fields: [residentId], references: [id], onDelete: Cascade)
+  procedure Procedure @relation(fields: [procedureId], references: [id], onDelete: Cascade)
+
+  @@index([residentId])
+  @@index([procedureId])
+}
+
+model Patient {
+  id          String   @id @default(cuid())
+  hrn         String   @unique
+  name        String
+  age         Int
+  gender      String
+  civilStatus String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CalendarEvent {
+  id          String   @id @default(cuid())
+  title       String
+  date        DateTime
+  startTime   String?
+  endTime     String?
+  url         String?
+  location    String?
+  details     String?
+  color       String   @default("#a00707")
+  createdAt   DateTime @default(now())
 }

@@ -1,5 +1,5 @@
 // prisma/seed.ts
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Role } from '@prisma/client';
 import { hashPassword } from '@/lib/password';
 
 const prisma = new PrismaClient();
@@ -25,13 +25,13 @@ async function seedTestUsers() {
         where: { email: user.email },
         update: {
           passwordHash: hashedPassword,
-          role: user.role,
+          role: user.role as Role,
           name: user.name,
         },
         create: {
           email: user.email,
           passwordHash: hashedPassword,
-          role: user.role,
+          role: user.role as Role,
           name: user.name,
         },
       });

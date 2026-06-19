@@ -17,46 +17,46 @@
     - [x] Add `Procedure` and `ProcedureType` models
     - [x] Refine `Form` and `Question` models with dynamic configurations (weights, points, etc.)
     - [x] Update `User` and `Profile` models for specific roles (Admin, Evaluator, Resident, etc.)
-- [ ] **Authentication & RBAC**
-    - [ ] Implement Role-Based Access Control (RBAC)
-    - [ ] Create Login/Register flow
-    - [ ] Setup Middleware for protected routes
+- [x] **Authentication & RBAC**
+    - [x] Implement Role-Based Access Control (RBAC)
+    - [x] Create Login/Register flow
+    - [x] Setup Middleware for protected routes
 
 ### Phase 2: System Configuration (Admin Modules)
-- [ ] **Domain Management**
-    - [ ] List/Create/Update/Delete Domains
-    - [ ] Hierarchical parent-child logic
-- [ ] **Procedure Management**
-    - [ ] List/Create/Update/Delete Procedures
-    - [ ] Procedure Type categorization
-- [ ] **Form Management**
-    - [ ] Dynamic Form Creation (Questions, Choice types, Weights)
-    - [ ] Form Duplication functionality
-    - [ ] Form-to-Domain mapping
+- [x] **Domain Management**
+    - [x] List/Create/Update/Delete Domains
+    - [x] Hierarchical parent-child logic
+- [x] **Procedure Management**
+    - [x] List/Create/Update/Delete Procedures
+    - [x] Procedure Type categorization
+- [x] **Form Management**
+    - [x] Dynamic Form Creation (Questions, Choice types, Weights)
+    - [x] Form Duplication functionality
+    - [x] Form-to-Domain mapping
 
 ### Phase 3: Evaluation & Tracking
-- [ ] **Evaluations Module**
-    - [ ] Status tracking (Pending, Draft, Submitted)
-    - [ ] Revert submitted form to Draft
-    - [ ] Form submission logic
-- [ ] **Procedure Monitoring**
-    - [ ] Procedure completion tracking (e.g., 2/15)
-    - [ ] Filtering by Year Level and Period
-- [ ] **User Management**
-    - [ ] Doctor Profiles (Training Officer, Consultant, Resident)
-    - [ ] Patient Records (HRN, demographics)
+- [x] **Evaluations Module**
+    - [x] Status tracking (Pending, Draft, Submitted)
+    - [x] Revert submitted form to Draft
+    - [x] Form submission logic
+- [x] **Procedure Monitoring**
+    - [x] Procedure completion tracking (e.g., 2/15)
+    - [x] Filtering by Year Level and Period
+- [x] **User Management**
+    - [x] Doctor Profiles (Training Officer, Consultant, Resident)
+    - [x] Patient Records (HRN, demographics)
 
 ### Phase 4: Reporting & UI (Frontend)
-- [ ] **Dashboard & Calendar**
-    - [ ] Full-month calendar grid
-    - [ ] Event modal with color picker
-- [ ] **Grade Summary & Grading Sheets**
-    - [ ] Tabbed year-level summary
-    - [ ] Complex data tables with raw scores/percentages
-    - [ ] Export to PDF/Excel (Simulated/Library)
-- [ ] **Global UI Refinement**
-    - [ ] Apply Poppins font and Color Palette
-    - [ ] Sidebar and Header styling
+- [x] **Dashboard & Calendar**
+    - [x] Full-month calendar grid
+    - [x] Event modal with color picker
+- [x] **Grade Summary & Grading Sheets**
+    - [x] Tabbed year-level summary
+    - [x] Complex data tables with raw scores/percentages
+    - [x] Export to PDF/Excel (Simulated/Library)
+- [x] **Global UI Refinement**
+    - [x] Apply Poppins font and Color Palette
+    - [x] Sidebar and Header styling
 
 ---
 
