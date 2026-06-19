@@ -1,102 +1,56 @@
-import { prisma } from "../src/lib/prisma";
-import { hashPassword } from "../src/lib/password";
+// prisma/seed.ts
+import { PrismaClient } from '@prisma/client';
+import { hashPassword } from '@/lib/password';
 
-type QuestionRow = { id: string };
+const prisma = new PrismaClient();
 
-function requireEnv(name: string): string {
-  const v = process.env[name];
-  if (!v || v.length === 0) throw new Error(`Missing env var: ${name}`);
-  return v;
+async function seedTestUsers() {
+  console.log("Starting test user seeding...");
+
+  const usersToSeed = [
+    { email: "admin@hospital.com", role: "ADMIN", name: "System Administrator", passwordPlain: "SecurePass123!" },
+    { email: "evaluator@hospital.com", role: "EVALUATOR", name: "Chief Evaluator Officer", passwordPlain: "ReviewPass456!" },
+    { email: "resident@hospital.com", role: "RESIDENT", name: "General Resident Staff", passwordPlain: "MyBasicPass789!" },
+  ];
+
+  for (const user of usersToSeed) {
+    console.log(`\nProcessing user: ${user.email} (${user.role})`);
+    try {
+      // Hash the plain text password FIRST using our utility
+      const hashedPassword = await hashPassword(user.passwordPlain);
+      console.log(`✅ Password for ${user.email} has been hashed.`);
+
+      // Insert/Update user in database
+      await prisma.user.upsert({
+        where: { email: user.email },
+        update: {
+          passwordHash: hashedPassword,
+          role: user.role,
+          name: user.name,
+        },
+        create: {
+          email: user.email,
+          passwordHash: hashedPassword,
+          role: user.role,
+          name: user.name,
+        },
+      });
+      console.log(`✅ Successfully seeded/updated user ${user.email} with role ${user.role}.`);
+
+    } catch (error) {
+      console.error(`❌ Error seeding user ${user.email}:`, error instanceof Error ? error.message : error);
+    }
+  }
+
+  console.log("\n✅ All test users have been seeded successfully!");
 }
 
-async function main() {
-  const adminPass = requireEnv("SEED_ADMIN_PASSWORD");
-  const evaluatorPass = requireEnv("SEED_EVALUATOR_PASSWORD");
-  const residentPass = requireEnv("SEED_RESIDENT_PASSWORD");
-
-  const adminHash = await hashPassword(adminPass);
-  const evaluatorHash = await hashPassword(evaluatorPass);
-  const residentHash = await hashPassword(residentPass);
-
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@oas.local" },
-    update: {},
-    create: { email: "admin@oas.local", name: "Admin User", passwordHash: adminHash, role: "ADMIN" },
-  });
-
-  const evaluator = await prisma.user.upsert({
-    where: { email: "evaluator@oas.local" },
-    update: {},
-    create: {
-      email: "evaluator@oas.local",
-      name: "Dr. Evaluator",
-      passwordHash: evaluatorHash,
-      role: "EVALUATOR",
-      evaluatorProfile: { create: {} },
-    },
-  });
-
-  const resident = await prisma.user.upsert({
-    where: { email: "resident@oas.local" },
-    update: {},
-    create: {
-      email: "resident@oas.local",
-      name: "Dr. Resident",
-      passwordHash: residentHash,
-      role: "RESIDENT",
-      residentProfile: { create: { yearLevel: 1 } },
-    },
-  });
-
-  const period = await prisma.period.create({
-    data: {
-      name: "AY 2026 - Period 1",
-      startDate: new Date("2026-01-01"),
-      endDate: new Date("2026-03-31"),
-    },
-  });
-
-  const form = await prisma.form.create({
-    data: {
-      title: "Core Clinical Competence",
-      questions: {
-        create: [
-          { label: "Clinical reasoning", maxPoints: 10 },
-          { label: "Communication", maxPoints: 10 },
-          { label: "Professionalism", maxPoints: 10 },
-        ],
-      },
-    },
-    include: { questions: true },
-  });
-
-  await prisma.evaluation.create({
-    data: {
-      evaluatorId: evaluator.id,
-      residentId: resident.id,
-      periodId: period.id,
-      formId: form.id,
-      scores: {
-        create: form.questions.map((q: QuestionRow, idx: number) => ({
-          questionId: q.id,
-          points: idx === 0 ? 8 : idx === 1 ? 9 : 10,
-        })),
-
-      },
-
-    },
-  });
-
-  console.log("Seed complete:");
-  console.log("Admin:", admin.email, adminPass);
-  console.log("Evaluator:", evaluator.email, evaluatorPass);
-  console.log("Resident:", resident.email, residentPass);
-}
-
-main()
-  .then(async () => prisma.$disconnect())
-  .catch(async (e) => {
-    console.error(e);
-    await prisma.$disconnect();
+seedTestUsers()
+  .catch(e => {
+    console.error("🛑 Failed to complete seeding process:", e);
     process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+    console.log("\nDatabase connection closed.");
   });

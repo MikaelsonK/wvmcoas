@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import type { UserRole } from "@/lib/authGuard";
 import { formDataToStrings } from "@/lib/formData";
 
 const headerSchema = z.object({
@@ -13,8 +15,22 @@ const headerSchema = z.object({
 
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions);
-  if (!session?.user || session.user.role !== "EVALUATOR") {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  
+  if (!session || !session.user) {
+    return NextResponse.json(
+      { error: "Unauthorized. Please log in first." },
+      { status: 401 }
+    );
+  }
+
+  const userRole = session.user.role as UserRole;
+  
+  // Only evaluators can create evaluations
+  if (userRole !== "EVALUATOR") {
+    return NextResponse.json(
+      { error: `Access denied. Only EVALUATOR role can perform this action.` },
+      { status: 403 }
+    );
   }
 
   const raw = formDataToStrings(await req.formData());
