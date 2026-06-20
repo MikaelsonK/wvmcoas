@@ -68,9 +68,7 @@ export function Sidebar({ role, onClose }: SidebarProps) {
   ];
 
   const adminSystem: NavItem[] = [
-    { href: "/admin/forms",       label: "Forms config",       icon: <FileSpreadsheet size={15} /> },
-    { href: "/admin/domains",     label: "Domains config",     icon: <Network size={15} /> },
-    { href: "/admin/procedures",  label: "Procedures config",  icon: <Settings size={15} /> },
+    { href: "/admin/curriculum",  label: "Curriculum Hub",     icon: <Network size={15} /> },
   ];
 
   const evaluatorLinks: NavItem[] = [

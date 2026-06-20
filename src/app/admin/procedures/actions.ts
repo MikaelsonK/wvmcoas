@@ -41,6 +41,7 @@ export async function createCategory(
     });
 
     revalidatePath("/admin/procedures");
+    revalidatePath("/admin/curriculum");
     return { success: true };
   } catch (err: any) {
     if (err.digest?.startsWith("NEXT_REDIRECT")) {
@@ -77,6 +78,7 @@ export async function createProcedure(
     });
 
     revalidatePath("/admin/procedures");
+    revalidatePath("/admin/curriculum");
     return { success: true };
   } catch (err: any) {
     if (err.digest?.startsWith("NEXT_REDIRECT")) {
@@ -94,6 +96,7 @@ export async function deleteCategory(id: string): Promise<void> {
   });
 
   revalidatePath("/admin/procedures");
+  revalidatePath("/admin/curriculum");
 }
 
 export async function deleteProcedure(id: string): Promise<void> {
@@ -104,4 +107,5 @@ export async function deleteProcedure(id: string): Promise<void> {
   });
 
   revalidatePath("/admin/procedures");
+  revalidatePath("/admin/curriculum");
 }

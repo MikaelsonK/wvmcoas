@@ -47,6 +47,7 @@ export async function createDomain(
     });
 
     revalidatePath("/admin/domains");
+    revalidatePath("/admin/curriculum");
     return { success: true };
   } catch (err: any) {
     if (err.digest?.startsWith("NEXT_REDIRECT")) {
@@ -64,4 +65,5 @@ export async function deleteDomain(id: string): Promise<void> {
   });
 
   revalidatePath("/admin/domains");
+  revalidatePath("/admin/curriculum");
 }

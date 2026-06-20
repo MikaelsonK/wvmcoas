@@ -99,6 +99,7 @@ export async function createForm(
     });
 
     revalidatePath("/admin/forms");
+    revalidatePath("/admin/curriculum");
     return { success: true };
   } catch (err) {
     const error = err as Error & { digest?: string };
@@ -137,4 +138,5 @@ export async function duplicateForm(id: string): Promise<void> {
   });
 
   revalidatePath("/admin/forms");
+  revalidatePath("/admin/curriculum");
 }

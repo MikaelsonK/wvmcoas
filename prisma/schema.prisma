@@ -66,15 +66,17 @@ model Period {
 }
 
 model Form {
-  id        String     @id @default(cuid())
-  title     String
-  domainId  String?    
-  createdAt DateTime   @default(now())
+  id          String     @id @default(cuid())
+  title       String
+  domainId    String?    
+  procedureId String?    
+  createdAt   DateTime   @default(now())
 
   questions   Question[]
   evaluations Evaluation[]
 
-  domain Domain? @relation(fields: [domainId], references: [id])
+  domain    Domain?    @relation(fields: [domainId], references: [id])
+  procedure Procedure? @relation(fields: [procedureId], references: [id], onDelete: SetNull)
 }
 
 model Question {
@@ -131,6 +133,7 @@ model Domain {
   parent        Domain?  @relation("DomainHierarchy", fields: [parentId], references: [id], onDelete: SetNull)
   children      Domain[] @relation("DomainHierarchy")
   forms         Form[]
+  procedures    Procedure[]
 
   @@index([parentId])
 }
@@ -148,10 +151,13 @@ model Procedure {
   id              String       @id @default(cuid())
   name            String
   procedureTypeId String
+  domainId        String?      
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
   type            ProcedureType @relation(fields: [procedureTypeId], references: [id], onDelete: Cascade)
+  domain          Domain?       @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  forms           Form[]
   logs            ProcedureLog[]
 }
 

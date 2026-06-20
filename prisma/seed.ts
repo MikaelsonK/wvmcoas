@@ -150,26 +150,28 @@ async function seedDatabase() {
   }
 
   const procedures = [
-    { name: "Normal Spontaneous Delivery (NSD)", typeName: "Major Obstetrics" },
-    { name: "Cesarean Delivery (Primary/Repeat)", typeName: "Major Obstetrics" },
-    { name: "Assisted Vaginal Delivery (Forceps/Vacuum)", typeName: "Major Obstetrics" },
-    { name: "Dilatation & Curettage (D&C)", typeName: "Minor Obstetrics" },
-    { name: "Episiotomy and Repair", typeName: "Minor Obstetrics" },
-    { name: "Total Abdominal Hysterectomy (TAH)", typeName: "Major Gynecology" },
-    { name: "Bilateral Salpingo-Oophorectomy (BSO)", typeName: "Major Gynecology" },
-    { name: "Endometrial Biopsy", typeName: "Minor Gynecology" },
-    { name: "Colposcopy", typeName: "Minor Gynecology" },
+    { name: "Normal Spontaneous Delivery (NSD)", typeName: "Major Obstetrics", domainName: "Obstetric Care" },
+    { name: "Cesarean Delivery (Primary/Repeat)", typeName: "Major Obstetrics", domainName: "Obstetric Care" },
+    { name: "Assisted Vaginal Delivery (Forceps/Vacuum)", typeName: "Major Obstetrics", domainName: "Obstetric Care" },
+    { name: "Dilatation & Curettage (D&C)", typeName: "Minor Obstetrics", domainName: "Obstetric Care" },
+    { name: "Episiotomy and Repair", typeName: "Minor Obstetrics", domainName: "Obstetric Care" },
+    { name: "Total Abdominal Hysterectomy (TAH)", typeName: "Major Gynecology", domainName: "Gynecologic Care" },
+    { name: "Bilateral Salpingo-Oophorectomy (BSO)", typeName: "Major Gynecology", domainName: "Gynecologic Care" },
+    { name: "Endometrial Biopsy", typeName: "Minor Gynecology", domainName: "Gynecologic Care" },
+    { name: "Colposcopy", typeName: "Minor Gynecology", domainName: "Gynecologic Care" },
   ];
 
   for (const proc of procedures) {
     const parentType = seededProcTypes[proc.typeName];
+    const domain = seededDomains[proc.domainName];
     await prisma.procedure.upsert({
       where: { id: proc.name.replace(/[^a-zA-Z]/g, '').toLowerCase() },
-      update: { procedureTypeId: parentType.id },
+      update: { procedureTypeId: parentType.id, domainId: domain.id },
       create: {
         id: proc.name.replace(/[^a-zA-Z]/g, '').toLowerCase(),
         name: proc.name,
         procedureTypeId: parentType.id,
+        domainId: domain.id,
       },
     });
   }
@@ -178,17 +180,19 @@ async function seedDatabase() {
   // 5. Seed Evaluation Forms and Questions
   console.log("Seeding clinical evaluation forms...");
   
-  // Form 1: DOPS - Cesarean Section (Mapped to Obstetric Care domain)
+  // Form 1: DOPS - Cesarean Section (Mapped to Obstetric Care domain and Cesarean procedure)
   const form1Id = "dops-cesarean-section";
   const obstetricCareDomain = seededDomains["Obstetric Care"];
+  const cesareanProcId = "cesareandeliveryprimaryrepeat";
   
   const form1 = await prisma.form.upsert({
     where: { id: form1Id },
-    update: { domainId: obstetricCareDomain.id },
+    update: { domainId: obstetricCareDomain.id, procedureId: cesareanProcId },
     create: {
       id: form1Id,
       title: "DOPS: Cesarean Section Evaluation Form",
       domainId: obstetricCareDomain.id,
+      procedureId: cesareanProcId,
     },
   });
 

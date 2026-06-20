@@ -17,9 +17,7 @@ export default async function AdminPage() {
   ];
 
   const system = [
-    { href: "/admin/forms",       icon: FileSpreadsheet, label: "Forms config",       desc: "Create and manage dynamic evaluation forms." },
-    { href: "/admin/domains",     icon: Network,         label: "Domains config",     desc: "Configure clinical domain hierarchy." },
-    { href: "/admin/procedures",  icon: Settings,        label: "Procedures config",  desc: "Define procedure types and procedures." },
+    { href: "/admin/curriculum",  icon: Network,         label: "Curriculum Hub",     desc: "Consolidated mapping of competency domains, procedures, and evaluation sheets." },
   ];
 
   function NavCard({ href, icon: Icon, label, desc }: { href: string; icon: any; label: string; desc: string }) {
