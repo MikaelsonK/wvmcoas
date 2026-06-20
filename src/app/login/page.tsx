@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { signIn } from "next-auth/react";
 import { Form, TextField, Label, Input, Button, Link } from "react-aria-components";
 import { Eye, EyeOff } from "lucide-react";
@@ -51,7 +52,7 @@ export default function LoginPage() {
         {/* Logo + title */}
         <div className="flex flex-col items-center mb-8">
           <div className="w-12 h-12 rounded-xl overflow-hidden mb-4 shadow-sm">
-            <img src="/oas_logo.png" alt="OAS Portal" className="w-full h-full object-cover" />
+            <Image src="/oas_logo.png" alt="OAS Portal" width={48} height={48} className="object-cover" />
           </div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">OAS Portal</h1>
           <p className="text-sm text-gray-400 mt-0.5">Sign in to your account</p>

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
@@ -86,7 +87,7 @@ export function Sidebar({ role }: SidebarProps) {
       {/* Logo */}
       <div className="flex items-center gap-2.5 px-3 mb-1">
         <div className="w-7 h-7 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
-          <img src="/oas_logo.png" alt="OAS Portal" className="w-full h-full object-cover" />
+          <Image src="/oas_logo.png" alt="OAS Portal" width={28} height={28} className="object-cover" />
         </div>
         <span className="text-[13.5px] font-bold text-gray-900 tracking-tight">OAS Portal</span>
       </div>

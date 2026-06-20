@@ -1,6 +1,7 @@
 "use client";
 
 import { Link, Button } from "react-aria-components";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { Rocket } from "lucide-react";
 
@@ -14,7 +15,7 @@ export function LandingPageClient() {
       <header className="w-full px-10 max-md:px-5 py-5 flex justify-between items-center border-b border-gray-100 sticky top-0 bg-white/80 backdrop-blur-md z-50">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full overflow-hidden shadow-md shadow-brand-red/20 transition-transform duration-300 hover:rotate-12 hover:scale-105 cursor-pointer">
-            <img src="/oas_logo.png" alt="OAS Portal Logo" className="w-full h-full object-cover" />
+            <Image src="/oas_logo.png" alt="OAS Portal Logo" width={40} height={40} className="object-cover" />
           </div>
           <div>
             <strong className="text-[18px] font-bold text-gray-900 block leading-tight tracking-tight">OAS Portal</strong>
@@ -71,10 +72,12 @@ export function LandingPageClient() {
           <div className="bg-white border border-gray-200/70 rounded-2xl p-7 shadow-sm hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-red/5 hover:border-brand-red/15 transition-all duration-300 flex flex-col items-start relative overflow-hidden group text-left">
             <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand-red/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="w-full h-44 flex justify-center items-center mb-5 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100/80 overflow-hidden">
-              <img
+              <Image
                 src="/rotations_track_icon.png"
                 alt="Real-Time Rotations Track"
-                className="w-[108px] h-[108px] object-contain drop-shadow-md group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300"
+                width={108}
+                height={108}
+                className="object-contain drop-shadow-md group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300"
               />
             </div>
             <h3 className="text-[17px] font-bold text-gray-900 mb-2.5 leading-snug">Real-Time Rotations Track</h3>
@@ -86,10 +89,12 @@ export function LandingPageClient() {
           <div className="bg-white border border-gray-200/70 rounded-2xl p-7 shadow-sm hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-red/5 hover:border-brand-red/15 transition-all duration-300 flex flex-col items-start relative overflow-hidden group text-left">
             <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand-red/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="w-full h-44 flex justify-center items-center mb-5 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100/80 overflow-hidden">
-              <img
+              <Image
                 src="/grading_sheets_icon.png"
                 alt="Competency Grading Sheets"
-                className="w-[108px] h-[108px] object-contain drop-shadow-md group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300"
+                width={108}
+                height={108}
+                className="object-contain drop-shadow-md group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300"
               />
             </div>
             <h3 className="text-[17px] font-bold text-gray-900 mb-2.5 leading-snug">Competency Grading Sheets</h3>
@@ -101,10 +106,12 @@ export function LandingPageClient() {
           <div className="bg-white border border-gray-200/70 rounded-2xl p-7 shadow-sm hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-red/5 hover:border-brand-red/15 transition-all duration-300 flex flex-col items-start relative overflow-hidden group text-left">
             <div className="absolute inset-x-0 top-0 h-[3px] bg-gradient-to-r from-transparent via-brand-red/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
             <div className="w-full h-44 flex justify-center items-center mb-5 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-100/80 overflow-hidden">
-              <img
+              <Image
                 src="/calendar_icon.png"
                 alt="Interactive Event Calendar"
-                className="w-[108px] h-[108px] object-contain drop-shadow-md group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300"
+                width={108}
+                height={108}
+                className="object-contain drop-shadow-md group-hover:scale-110 group-hover:-translate-y-1 transition-transform duration-300"
               />
             </div>
             <h3 className="text-[17px] font-bold text-gray-900 mb-2.5 leading-snug">Interactive Event Calendar</h3>
@@ -119,7 +126,7 @@ export function LandingPageClient() {
       {/* ── Footer ── */}
       <footer className="w-full px-10 py-8 border-t border-gray-100 flex flex-col items-center gap-2.5 mt-10">
         <div className="w-7 h-7 rounded-full overflow-hidden shadow-sm shadow-brand-red/20">
-          <img src="/oas_logo.png" alt="OAS Portal Logo" className="w-full h-full object-cover" />
+          <Image src="/oas_logo.png" alt="OAS Portal Logo" width={28} height={28} className="object-cover" />
         </div>
         <p className="text-[12px] text-gray-400 tracking-wide">
           &copy; 2022 OAS Portal &ndash; All rights Reserved.
