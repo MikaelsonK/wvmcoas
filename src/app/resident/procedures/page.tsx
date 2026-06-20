@@ -5,16 +5,30 @@ import React from "react";
 import { PrintButton } from "@/components/PrintButton";
 import { ProcedureLogForm } from "@/components/ProcedureLogForm";
 
-export default async function ResidentProceduresPage() {
+export default async function ResidentProceduresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   const { userId } = await requireRole(["RESIDENT"]);
+  const { q = "" } = await searchParams;
 
-  // Fetch all procedure types and procedures
+  // Fetch all procedure types and procedures matching query
   const procedureTypes = await prisma.procedureType.findMany({
     include: {
       procedures: {
+        where: q ? { name: { contains: q, mode: "insensitive" } } : {},
         orderBy: { name: "asc" }
       }
     },
+    where: q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { procedures: { some: { name: { contains: q, mode: "insensitive" } } } },
+          ],
+        }
+      : {},
     orderBy: { name: "asc" }
   });
 
@@ -25,7 +39,18 @@ export default async function ResidentProceduresPage() {
 
   // Fetch this resident's logs
   const logs = await prisma.procedureLog.findMany({
-    where: { residentId: userId },
+    where: {
+      residentId: userId,
+      ...(q
+        ? {
+            OR: [
+              { procedure: { name: { contains: q, mode: "insensitive" } } },
+              { procedure: { type: { name: { contains: q, mode: "insensitive" } } } },
+              { patientHRN: { contains: q, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+    },
     include: {
       procedure: {
         include: { type: true },
@@ -34,17 +59,19 @@ export default async function ResidentProceduresPage() {
     orderBy: { loggedAt: "desc" },
   });
 
-  type LogRow = (typeof logs)[number];
-  type ProcRow = (typeof procedures)[number];
+  // Calculate completed count per procedure for progress (always evaluate against all procedures)
+  const allLogsForResident = await prisma.procedureLog.findMany({
+    where: { residentId: userId },
+    select: { procedureId: true },
+  });
 
-  // Calculate completed count per procedure
   const logCounts = new Map<string, number>();
-  for (const log of logs) {
+  for (const log of allLogsForResident) {
     logCounts.set(log.procedureId, (logCounts.get(log.procedureId) ?? 0) + 1);
   }
 
   const targetProceduresCount = 15; // Target requirement per procedure
-  const totalLogged = logs.length;
+  const totalLogged = allLogsForResident.length;
   
   // Total unique target count = total number of procedures * 15
   const totalProcedures = procedures.length;
@@ -57,103 +84,82 @@ export default async function ResidentProceduresPage() {
     typeName: p.type.name,
   }));
 
-  return (
-    <div className="card">
-      <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          body {
-            background: white !important;
-            color: black !important;
-            font-family: 'Poppins', sans-serif !important;
-          }
-          aside, header, nav, button, .button-primary, .button-secondary, .no-print, .log-form-col {
-            display: none !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            background: transparent !important;
-          }
-          .card {
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            background: transparent !important;
-          }
-          table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-            margin-top: 16px !important;
-          }
-          th, td {
-            border: 1px solid #111 !important;
-            padding: 8px !important;
-            font-size: 11px !important;
-            color: #000 !important;
-          }
-          tr {
-            page-break-inside: avoid !important;
-          }
-          .proc-type-hdr {
-            background-color: #f2f2f2 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-        }
-      `}} />
+  type LogRow = (typeof logs)[number];
 
-      <div className="row" style={{ alignItems: "center", marginBottom: 24 }}>
-        <div className="col">
-          <h1>Clinical Procedure Logger & Monitor</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
+  return (
+    <div className="p-6 print:p-0 print:bg-white print:text-black">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5 print:border-none print:pb-0">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 print:text-xl print:font-bold">Clinical Procedure Logger & Monitor</h1>
+          <p className="text-sm text-gray-400 mt-0.5 print:hidden">
             Log completed operations and track your requirements progress.
           </p>
         </div>
-        <div className="col text-center no-print" style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <PrintButton label="🖨️ Print Progress Report" className="button-primary" style={{ backgroundColor: "var(--brand-red)" }} />
-          <Link href="/resident" className="button-secondary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+        <div className="flex gap-2.5 items-center print:hidden">
+          <PrintButton
+            label="🖨️ Print Progress Report"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] transition-colors"
+          />
+          <Link
+            href="/resident"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+          >
             ← Back to Dashboard
           </Link>
         </div>
       </div>
 
       {/* Progress / Tracker Cards */}
-      <div className="row" style={{ marginBottom: 24 }}>
-        <div className="col card" style={{ padding: 20, backgroundColor: "var(--bg-secondary)", display: "flex", flexDirection: "column", gap: 12 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <strong>Rotations Requirements Completion Track</strong>
-            <span style={{ color: "var(--brand-red)", fontWeight: "bold" }}>{totalLogged} / {overallTarget} Total Logs</span>
-          </div>
-          {/* Progress Bar */}
-          <div style={{ width: "100%", height: 16, backgroundColor: "var(--border)", borderRadius: 8, overflow: "hidden" }}>
-            <div style={{ width: `${completionPercentage}%`, height: "100%", backgroundColor: "var(--brand-red)", transition: "width 0.4s ease" }} />
-          </div>
-          <small style={{ color: "var(--muted)" }}>You have completed {completionPercentage}% of your total procedure targets.</small>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm mb-6 print:border print:border-black print:shadow-none print:p-3">
+        <div className="flex justify-between items-center mb-3 flex-wrap gap-2">
+          <strong className="text-sm font-bold text-gray-900 print:text-[13px]">Rotations Requirements Completion Track</strong>
+          <span className="text-sm font-bold text-brand-red print:text-black">{totalLogged} / {overallTarget} Total Logs</span>
         </div>
+        {/* Progress Bar */}
+        <div className="w-full h-4 bg-gray-100 rounded-full overflow-hidden mb-2 print:hidden">
+          <div
+            className="h-full bg-brand-red transition-all duration-300 rounded-full"
+            style={{ width: `${completionPercentage}%` }}
+          />
+        </div>
+        <p className="text-xs text-gray-400 print:text-black">
+          You have completed {completionPercentage}% of your total procedure targets.
+        </p>
       </div>
 
-      <div className="row" style={{ gap: 20 }}>
+      <div className="flex gap-5 items-start flex-wrap">
         {/* Logging Form Card Column (hidden when printing) */}
-        <div className="col log-form-col" style={{ flex: 1, minWidth: 300, display: "flex", flexDirection: "column", gap: 20 }}>
-          <div className="card" style={{ padding: 20 }}>
-            <h3>Log Completed Procedure</h3>
+        <div className="w-72 shrink-0 flex flex-col gap-4 print:hidden">
+          <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+            <h3 className="text-[13.5px] font-bold text-gray-900 mb-4">Log Completed Procedure</h3>
             <ProcedureLogForm procedures={procedureOptions} />
           </div>
         </div>
 
         {/* Categorized Completion Table Column */}
-        <div className="col card" style={{ padding: 20, flex: 2, minWidth: 400 }}>
-          <h3>Rotations Completion Progress</h3>
-          <p style={{ fontSize: 13, color: "var(--muted)", margin: "4px 0 16px 0" }}>
-            Accomplishments grouped by medical procedure type against required target ({targetProceduresCount} logs per procedure).
-          </p>
-
-          <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+        <div className="flex-1 min-w-[320px] bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm print:border print:border-black print:shadow-none print:rounded-none">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3 print:hidden">
+            <div>
+              <h2 className="text-[13.5px] font-bold text-gray-900">Rotations Completion Progress</h2>
+              <p className="text-xs text-gray-400 mt-0.5">
+                Accomplishments vs required target ({targetProceduresCount} logs per procedure).
+              </p>
+            </div>
+            <form className="max-w-[200px] flex-1">
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Search procedures…"
+                className="w-full px-3 py-1.5 text-[12.5px] text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 placeholder:text-gray-400"
+              />
+            </form>
+          </div>
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                <th style={{ textAlign: "left", padding: 8 }}>Procedure Name</th>
-                <th style={{ textAlign: "center", padding: 8, width: 140 }}>Target</th>
-                <th style={{ textAlign: "right", padding: 8, width: 140 }}>Progress</th>
+              <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Procedure Name</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-28 print:text-black print:font-bold">Target</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-36 print:text-black print:font-bold">Progress</th>
               </tr>
             </thead>
             <tbody>
@@ -163,23 +169,28 @@ export default async function ResidentProceduresPage() {
                 return (
                   <React.Fragment key={type.id}>
                     {/* Category Header */}
-                    <tr className="proc-type-hdr" style={{ backgroundColor: "var(--bg-secondary)", borderBottom: "2px solid var(--border)" }}>
-                      <td colSpan={3} style={{ padding: "8px 10px", fontWeight: "bold", color: "var(--brand-red)" }}>
+                    <tr className="bg-gray-50/70 border-y border-gray-200/60 print:bg-gray-200 print:border-y print:border-black print:break-inside-avoid">
+                      <td colSpan={3} className="px-4 py-2.5 font-bold text-brand-red text-[13px] print:text-black">
                         📂 {type.name}
                       </td>
                     </tr>
                     {type.procedures.map((p) => {
                       const completedCount = logCounts.get(p.id) ?? 0;
                       const pct = Math.min(Math.round((completedCount / targetProceduresCount) * 100), 100);
+                      
+                      let progressColor = "text-red-600";
+                      if (completedCount >= targetProceduresCount) {
+                        progressColor = "text-green-700 print:text-black";
+                      } else if (completedCount >= 5) {
+                        progressColor = "text-amber-600 print:text-black";
+                      }
+
                       return (
-                        <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                          <td style={{ padding: "8px 16px" }}>{p.name}</td>
-                          <td style={{ padding: 8, textAlign: "center" }}>{targetProceduresCount}</td>
-                          <td style={{ padding: 8, textAlign: "right" }}>
-                            <span style={{
-                              fontWeight: "bold",
-                              color: completedCount >= targetProceduresCount ? "#137333" : completedCount >= 5 ? "#cd9804" : "#c52744"
-                            }}>
+                        <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
+                          <td className="px-5 py-2.5 text-[13px] text-gray-700 print:text-black">{p.name}</td>
+                          <td className="px-4 py-2.5 text-[13px] text-gray-400 text-center print:text-black">{targetProceduresCount}</td>
+                          <td className="px-4 py-2.5 text-[13px] text-right">
+                            <span className={`font-semibold ${progressColor}`}>
                               {completedCount} / {targetProceduresCount} ({pct}%)
                             </span>
                           </td>
@@ -195,41 +206,40 @@ export default async function ResidentProceduresPage() {
       </div>
 
       {/* Logging History Table Column (no-print) */}
-      <div className="card no-print" style={{ padding: 20, marginTop: 24 }}>
-        <h3>Your Logged History</h3>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mt-6 print:hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-[13.5px] font-bold text-gray-900">Your Logged History</h2>
+        </div>
         {logs.length === 0 ? (
-          <p style={{ color: "var(--muted)" }}>No procedures logged yet.</p>
+          <p className="px-5 py-6 text-sm text-gray-400">No procedures logged yet.</p>
         ) : (
-          <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                <th style={{ textAlign: "left", padding: 8 }}>Date</th>
-                <th style={{ textAlign: "left", padding: 8 }}>Procedure</th>
-                <th style={{ textAlign: "left", padding: 8 }}>Patient HRN</th>
-                <th style={{ textAlign: "center", padding: 8 }}>Supervision</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Date</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Procedure</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Patient HRN</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Supervision</th>
               </tr>
             </thead>
             <tbody>
               {logs.map((log: LogRow) => (
-                <tr key={log.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: 8, fontSize: 13 }}>
+                <tr key={log.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-[12.5px] text-gray-500">
                     {log.loggedAt.toISOString().slice(0, 10)}
                   </td>
-                  <td style={{ padding: 8 }}>
-                    <strong>{log.procedure.name}</strong><br />
-                    <small style={{ color: "var(--muted)" }}>{log.procedure.type.name}</small>
+                  <td className="px-4 py-3">
+                    <div className="text-[13px] font-semibold text-gray-900">{log.procedure.name}</div>
+                    <div className="text-[11px] text-gray-400">{log.procedure.type.name}</div>
                   </td>
-                  <td style={{ padding: 8, fontFamily: "monospace" }}>{log.patientHRN}</td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <span style={{
-                      padding: "2px 6px",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      backgroundColor: log.status === "COMPLETED" ? "#e6f4ea" : "#fff3cd",
-                      color: log.status === "COMPLETED" ? "#137333" : "#856404",
-                      fontWeight: "500"
-                    }}>
-                      {log.status}
+                  <td className="px-4 py-3 text-[13px] font-mono text-gray-700">{log.patientHRN}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      log.status === "COMPLETED"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}>
+                      {log.status === "COMPLETED" ? "Completed" : "Supervised"}
                     </span>
                   </td>
                 </tr>

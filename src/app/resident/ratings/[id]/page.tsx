@@ -30,12 +30,17 @@ export default async function ResidentRatingDetailsPage({
 
   if (!evaluation) {
     return (
-      <div className="card">
-        <h1>Evaluation Not Found</h1>
-        <p style={{ color: "var(--muted)" }}>The evaluation you requested could not be found or has been deleted.</p>
-        <Link href="/resident/ratings" className="button-secondary" style={{ textDecoration: "none", marginTop: 12, display: "inline-block" }}>
-          ← Back to Ratings
-        </Link>
+      <div className="p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 text-center max-w-md mx-auto shadow-sm">
+          <h1 className="text-lg font-bold text-gray-900 mb-2">Evaluation Not Found</h1>
+          <p className="text-sm text-gray-400 mb-4">The evaluation you requested could not be found or has been deleted.</p>
+          <Link
+            href="/resident/ratings"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors inline-block"
+          >
+            ← Back to Ratings
+          </Link>
+        </div>
       </div>
     );
   }
@@ -45,13 +50,8 @@ export default async function ResidentRatingDetailsPage({
     scoreMap.set(s.questionId, s.points);
   }
 
-  let totalScored = 0;
-  let totalMax = 0;
-  
   const questionRows = evaluation.form.questions.map((q) => {
     const scoredPoints = scoreMap.get(q.id) ?? 0;
-    totalScored += scoredPoints;
-    totalMax += q.maxPoints;
     const percentage = q.maxPoints > 0 ? Math.round((scoredPoints / q.maxPoints) * 100) : 0;
     return {
       id: q.id,
@@ -62,93 +62,99 @@ export default async function ResidentRatingDetailsPage({
     };
   });
 
+  const totalScored = questionRows.reduce((sum, r) => sum + r.scoredPoints, 0);
+  const totalMax = questionRows.reduce((sum, r) => sum + r.maxPoints, 0);
   const totalPercentage = totalMax > 0 ? Math.round((totalScored / totalMax) * 100) : 0;
 
   return (
-    <div className="card">
-      <div className="row" style={{ alignItems: "center", marginBottom: 24 }}>
-        <div className="col">
-          <h1>Evaluation Performance Details</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
-            Detailed breakdown of scores for evaluation form <strong>{evaluation.form.title}</strong>
+    <div className="p-6">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Evaluation Performance Details</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Detailed breakdown of scores for evaluation form <span className="font-semibold text-gray-600">{evaluation.form.title}</span>
           </p>
         </div>
-        <div className="col text-center" style={{ textAlign: "right" }}>
-          <Link href="/resident/ratings" className="button-secondary" style={{ textDecoration: "none" }}>
-            ← Back to Ratings
-          </Link>
-        </div>
+        <Link
+          href="/resident/ratings"
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+        >
+          ← Back to Ratings
+        </Link>
       </div>
 
-      <div className="row" style={{ gap: 24, marginBottom: 24 }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {/* Info Card */}
-        <div className="col card" style={{ padding: 20, flex: 2, backgroundColor: "var(--bg-secondary)" }}>
-          <h3 style={{ borderBottom: "2px solid var(--brand-gold)", paddingBottom: 8, color: "var(--brand-red)" }}>
+        <div className="md:col-span-2 bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+          <h3 className="text-sm font-bold text-brand-red border-b border-gray-100 pb-3 mb-4">
             Metadata & Evaluator Info
           </h3>
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 16 }}>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <span style={{ color: "var(--muted)", display: "block", fontSize: 12 }}>Evaluator Name</span>
-              <strong>{evaluation.evaluator.name}</strong>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Evaluator Name</span>
+              <strong className="text-sm font-semibold text-gray-900 mt-0.5 block">{evaluation.evaluator.name}</strong>
             </div>
             <div>
-              <span style={{ color: "var(--muted)", display: "block", fontSize: 12 }}>Evaluator Email</span>
-              <strong>{evaluation.evaluator.email}</strong>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Evaluator Email</span>
+              <strong className="text-sm font-semibold text-gray-900 mt-0.5 block">{evaluation.evaluator.email}</strong>
             </div>
             <div>
-              <span style={{ color: "var(--muted)", display: "block", fontSize: 12 }}>Evaluation Period</span>
-              <strong>{evaluation.period.name}</strong>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Evaluation Period</span>
+              <strong className="text-sm font-semibold text-gray-900 mt-0.5 block">{evaluation.period.name}</strong>
             </div>
             <div>
-              <span style={{ color: "var(--muted)", display: "block", fontSize: 12 }}>Submission Date</span>
-              <strong>{evaluation.submittedAt.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</strong>
+              <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block">Submission Date</span>
+              <strong className="text-sm font-semibold text-gray-900 mt-0.5 block">
+                {evaluation.submittedAt.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+              </strong>
             </div>
           </div>
         </div>
 
         {/* Scoring Summary Card */}
-        <div className="col card" style={{ padding: 20, display: "flex", flexDirection: "column", justifyContent: "center", alignItems: "center", border: "2px solid var(--brand-red)" }}>
-          <h3 style={{ margin: 0, color: "var(--text)" }}>Total Score</h3>
-          <div style={{ fontSize: 48, fontWeight: "bold", color: "var(--brand-red)", margin: "16px 0" }}>
-            {totalScored} <span style={{ fontSize: 24, color: "var(--muted)" }}>/ {totalMax}</span>
+        <div className="bg-white border border-brand-red/30 rounded-xl p-5 shadow-sm flex flex-col justify-center items-center text-center">
+          <h3 className="text-sm font-bold text-gray-600 uppercase tracking-wider">Total Score</h3>
+          <div className="text-4xl font-extrabold text-brand-red my-4">
+            {totalScored} <span className="text-xl font-normal text-gray-400">/ {totalMax}</span>
           </div>
-          <div style={{
-            padding: "8px 16px",
-            borderRadius: 20,
-            backgroundColor: totalPercentage >= 85 ? "#e6f4ea" : totalPercentage >= 70 ? "#fff3cd" : "#feedf0",
-            color: totalPercentage >= 85 ? "#137333" : totalPercentage >= 70 ? "#856404" : "#c52744",
-            fontWeight: "bold",
-            fontSize: 16
-          }}>
+          <div className={`px-4 py-1.5 rounded-full text-xs font-bold ${
+            totalPercentage >= 85
+              ? "bg-green-50 text-green-700 border border-green-200"
+              : totalPercentage >= 70
+              ? "bg-amber-50 text-amber-700 border border-amber-200"
+              : "bg-red-50 text-red-700 border border-red-200"
+          }`}>
             {totalPercentage}% Average Rating
           </div>
         </div>
       </div>
 
-      <div className="card" style={{ padding: 20 }}>
-        <h3>Question-by-Question Scores</h3>
-        <table className="table" style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-[13.5px] font-bold text-gray-900">Question-by-Question Scores</h2>
+        </div>
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ borderBottom: "2px solid var(--border)" }}>
-              <th style={{ textAlign: "left", padding: 12 }}>Evaluation Criteria / Question</th>
-              <th style={{ textAlign: "center", padding: 12, width: 120 }}>Scored Points</th>
-              <th style={{ textAlign: "center", padding: 12, width: 120 }}>Max Points</th>
-              <th style={{ textAlign: "right", padding: 12, width: 120 }}>Percentage</th>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Evaluation Criteria / Question</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32">Scored Points</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32">Max Points</th>
+              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32">Percentage</th>
             </tr>
           </thead>
           <tbody>
             {questionRows.map((q) => (
-              <tr key={q.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                <td style={{ padding: 12 }}>
-                  <strong>{q.label}</strong>
+              <tr key={q.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 text-[13px] font-semibold text-gray-900">
+                  {q.label}
                 </td>
-                <td style={{ padding: 12, textAlign: "center", fontWeight: "bold", color: "var(--brand-red)" }}>
+                <td className="px-4 py-3 text-[13.5px] font-bold text-brand-red text-center">
                   {q.scoredPoints}
                 </td>
-                <td style={{ padding: 12, textAlign: "center", color: "var(--muted)" }}>
+                <td className="px-4 py-3 text-[13px] text-gray-400 text-center">
                   {q.maxPoints}
                 </td>
-                <td style={{ padding: 12, textAlign: "right", fontWeight: "500" }}>
+                <td className="px-4 py-3 text-[13px] text-gray-900 font-medium text-right">
                   {q.percentage}%
                 </td>
               </tr>

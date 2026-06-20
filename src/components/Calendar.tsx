@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 
 export interface CalendarEvent {
   id: string;
@@ -23,19 +23,19 @@ export function Calendar({ events }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
-  const [eventColors, setEventColors] = useState<Record<string, string>>({});
-
-  // Load colors from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("oas_event_colors");
-    if (saved) {
-      try {
-        setEventColors(JSON.parse(saved));
-      } catch (e) {
-        console.error(e);
+  const [eventColors, setEventColors] = useState<Record<string, string>>(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("oas_event_colors");
+      if (saved) {
+        try {
+          return JSON.parse(saved);
+        } catch (e) {
+          console.error(e);
+        }
       }
     }
-  }, []);
+    return {};
+  });
 
   const saveEventColor = (eventId: string, color: string) => {
     const updated = { ...eventColors, [eventId]: color };

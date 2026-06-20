@@ -23,7 +23,6 @@ export default async function ResidentPage() {
       form: { select: { title: true } },
     },
   });
-  type EvaluationRow = (typeof evaluations)[number];
 
   const sums = await prisma.score.groupBy({
     by: ["evaluationId"],
@@ -60,7 +59,7 @@ export default async function ResidentPage() {
       date: e.submittedAt,
       title: e.form.title,
       description: `Evaluator: ${e.evaluator.name}\nStatus: ${e.status}\nLogged: ${e.submittedAt.toLocaleDateString()}`,
-      color: "var(--brand-red)",
+      color: "#a00707", // brand-red
     })),
     ...dbEvents.map((ev) => ({
       id: ev.id,
@@ -77,33 +76,35 @@ export default async function ResidentPage() {
   ];
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
-      <div className="card">
-        <div className="row" style={{ alignItems: "center", marginBottom: 20 }}>
-          <div className="col">
-            <h1>My Grade Summary</h1>
+    <div className="p-6 flex flex-col gap-6">
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">My Grade Summary</h1>
+            <p className="text-xs text-gray-400 mt-0.5">Summary of scores across evaluation periods.</p>
           </div>
-          <div className="col text-center" style={{ textAlign: "right" }}>
-            <Link href="/resident/procedures" className="button-primary" style={{ textDecoration: "none" }}>
-              Log Procedures / Track Progress →
-            </Link>
-          </div>
+          <Link
+            href="/resident/procedures"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] transition-colors"
+          >
+            Log Procedures / Track Progress →
+          </Link>
         </div>
 
-        <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ borderBottom: "2px solid var(--border)" }}>
-              <th style={{ textAlign: "left", padding: 8 }}>Period</th>
-              <th style={{ textAlign: "center", padding: 8 }}># Evaluations (Submitted)</th>
-              <th style={{ textAlign: "right", padding: 8 }}>Total Points</th>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Period</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-48"># Evaluations (Submitted)</th>
+              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-40">Total Points</th>
             </tr>
           </thead>
           <tbody>
             {summary.map((s) => (
-              <tr key={s.periodId} style={{ borderBottom: "1px solid var(--border)" }}>
-                <td style={{ padding: 8 }}><strong>{s.name}</strong></td>
-                <td style={{ padding: 8, textAlign: "center" }}>{s.evaluationsCount}</td>
-                <td style={{ padding: 8, textAlign: "right", color: "var(--brand-red)", fontWeight: "bold" }}>
+              <tr key={s.periodId} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                <td className="px-4 py-3 text-[13px] font-bold text-gray-900">{s.name}</td>
+                <td className="px-4 py-3 text-[13px] text-gray-500 text-center">{s.evaluationsCount}</td>
+                <td className="px-4 py-3 text-[13px] font-bold text-brand-red text-right">
                   {s.totalPoints}
                 </td>
               </tr>
@@ -113,9 +114,9 @@ export default async function ResidentPage() {
       </div>
 
       {/* Calendar Card */}
-      <div className="card">
-        <h2>My Evaluation Calendar</h2>
-        <p style={{ color: "var(--muted)", margin: "4px 0 16px 0", fontSize: 14 }}>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
+        <h2 className="text-[14px] font-bold text-gray-900">My Evaluation Calendar</h2>
+        <p className="text-xs text-gray-400 mt-0.5 mb-4">
           Click on any event to see details or customize its highlight color.
         </p>
         <Calendar events={calendarEvents} />

@@ -17,75 +17,64 @@ export default async function ResidentRatingsPage() {
   type EvalRow = (typeof evaluations)[number];
 
   return (
-    <div className="card">
-      <div className="row" style={{ alignItems: "center", marginBottom: 24 }}>
-        <div className="col">
-          <h1>My Ratings & Evaluations</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
+    <div className="p-6">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">My Ratings & Evaluations</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
             Review evaluation feedback, domain scores, and supervisor commentary.
           </p>
         </div>
-        <div className="col text-center" style={{ textAlign: "right" }}>
-          <Link href="/resident" className="button-secondary" style={{ textDecoration: "none" }}>
-            ← Back to Dashboard
-          </Link>
-        </div>
+        <Link
+          href="/resident"
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+        >
+          ← Back to Dashboard
+        </Link>
       </div>
 
-      <div className="card" style={{ padding: 20 }}>
-        <h3>Submitted Evaluations</h3>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-[13.5px] font-bold text-gray-900">Submitted Evaluations</h2>
+        </div>
         {evaluations.length === 0 ? (
-          <p style={{ color: "var(--muted)" }}>No evaluations have been logged for you yet.</p>
+          <p className="px-5 py-6 text-sm text-gray-400">No evaluations have been logged for you yet.</p>
         ) : (
-          <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                <th style={{ textAlign: "left", padding: 12 }}>Evaluation Form Name</th>
-                <th style={{ textAlign: "center", padding: 12 }}>Status</th>
-                <th style={{ textAlign: "left", padding: 12 }}>Submitted Date</th>
-                <th style={{ textAlign: "left", padding: 12 }}>Evaluated By</th>
-                <th style={{ textAlign: "left", padding: 12 }}>Updated Date</th>
-                <th style={{ textAlign: "right", padding: 12 }}>Actions</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Evaluation Form Name</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32">Status</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Submitted Date</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Evaluated By</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-36">Actions</th>
               </tr>
             </thead>
             <tbody>
               {evaluations.map((ev: EvalRow) => (
-                <tr key={ev.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: 12 }}>
-                    <strong>{ev.form.title}</strong>
+                <tr key={ev.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-[13px] font-semibold text-gray-900">
+                    {ev.form.title}
                   </td>
-                  <td style={{ padding: 12, textAlign: "center" }}>
-                    <span
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: 4,
-                        fontSize: 12,
-                        fontWeight: "500",
-                        backgroundColor: ev.status === "SUBMITTED" ? "#e6f4ea" : "#fff3cd",
-                        color: ev.status === "SUBMITTED" ? "#137333" : "#856404",
-                      }}
-                    >
-                      {ev.status}
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex px-2.5 py-0.5 rounded-full text-[10.5px] font-semibold ${
+                      ev.status === "SUBMITTED"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-amber-50 text-amber-700 border border-amber-200"
+                    }`}>
+                      {ev.status === "SUBMITTED" ? "Submitted" : "Draft"}
                     </span>
                   </td>
-                  <td style={{ padding: 12, fontSize: 13 }}>
+                  <td className="px-4 py-3 text-[13px] text-gray-500">
                     {ev.submittedAt.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
                   </td>
-                  <td style={{ padding: 12 }}>
+                  <td className="px-4 py-3 text-[13px] text-gray-900">
                     {ev.evaluator.name}
                   </td>
-                  <td style={{ padding: 12, fontSize: 13 }}>
-                    {ev.submittedAt.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })}
-                  </td>
-                  <td style={{ padding: 12, textAlign: "right" }}>
+                  <td className="px-4 py-3 text-right">
                     <Link
                       href={`/resident/ratings/${ev.id}`}
-                      className="button-primary"
-                      style={{
-                        textDecoration: "none",
-                        padding: "6px 12px",
-                        fontSize: 12,
-                      }}
+                      className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-red hover:bg-[#8a0606] transition-colors"
                     >
                       View Details
                     </Link>
