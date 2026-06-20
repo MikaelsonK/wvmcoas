@@ -82,124 +82,92 @@ export default async function AdminProcedureSummaryPage({
   const targetPerResident = 15; // Target is 15 completions per procedure
   const totalTarget = Math.max(residentsCount, 1) * targetPerResident;
 
-  return (
-    <div className="card">
-      <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          body {
-            background: white !important;
-            color: black !important;
-            font-family: 'Poppins', sans-serif !important;
-          }
-          aside, header, nav, button, .button-primary, .button-secondary, .no-print, .filters-container {
-            display: none !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            background: transparent !important;
-          }
-          .card {
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            background: transparent !important;
-          }
-          table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-            margin-top: 16px !important;
-          }
-          th, td {
-            border: 1px solid #111 !important;
-            padding: 8px !important;
-            font-size: 11px !important;
-            color: #000 !important;
-          }
-          tr {
-            page-break-inside: avoid !important;
-          }
-          .proc-type-header {
-            background-color: #f2f2f2 !important;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-        }
-      `}} />
+  const selectClass = "px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 w-full sm:w-64";
 
-      <div className="row" style={{ alignItems: "center", marginBottom: 20 }}>
-        <div className="col">
-          <h1>Procedure Monitoring & Summary</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
+  return (
+    <div className="p-6 print:p-0 print:bg-white print:text-black">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5 print:border-none">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 print:text-xl print:font-bold">Procedure Monitoring & Summary</h1>
+          <p className="text-sm text-gray-400 mt-0.5 print:hidden">
             Overview of total resident clinical accomplishments vs target requirement logs.
           </p>
         </div>
-        <div className="col text-center no-print" style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <PrintButton label="🖨️ Print Summary" className="button-primary" style={{ backgroundColor: "var(--brand-red)" }} />
-          <Link href="/admin" className="button-secondary" style={{ textDecoration: "none" }}>
+        <div className="flex gap-2.5 items-center print:hidden">
+          <PrintButton
+            label="🖨️ Print Summary"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] transition-colors"
+          />
+          <Link
+            href="/admin"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+          >
             ← Back to Admin
           </Link>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="card filters-container" style={{ padding: 16, marginBottom: 24, backgroundColor: "var(--bg-secondary)" }}>
-        <form method="GET" action="/admin/procedure-summary">
-          <div className="row" style={{ alignItems: "flex-end", marginBottom: 0 }}>
-            <div className="col form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="filter-period">Evaluation Period</label>
-              <select id="filter-period" name="period" className="input-field" defaultValue={activePeriodId}>
-                {periods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name} ({p.startDate.toISOString().slice(0, 10)} to {p.endDate.toISOString().slice(0, 10)})
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="filter-year">Resident Year Level</label>
-              <select id="filter-year" name="year" className="input-field" defaultValue={selectedYear}>
-                <option value="all">All Year Levels</option>
-                <option value="1">Year 1</option>
-                <option value="2">Year 2</option>
-                <option value="3">Year 3</option>
-              </select>
-            </div>
-            <div className="col-auto">
-              <button type="submit" className="button-secondary" style={{ padding: "10px 20px" }}>
-                Apply Filters
-              </button>
-            </div>
+      <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6 print:hidden">
+        <form method="GET" action="/admin/procedure-summary" className="flex flex-wrap gap-4 items-end">
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="filter-period" className="text-[12.5px] font-semibold text-gray-600">Evaluation Period</label>
+            <select id="filter-period" name="period" className={selectClass} defaultValue={activePeriodId}>
+              {periods.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name} ({p.startDate.toISOString().slice(0, 10)} to {p.endDate.toISOString().slice(0, 10)})
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="filter-year" className="text-[12.5px] font-semibold text-gray-600">Resident Year Level</label>
+            <select id="filter-year" name="year" className={selectClass} defaultValue={selectedYear}>
+              <option value="all">All Year Levels</option>
+              <option value="1">Year 1</option>
+              <option value="2">Year 2</option>
+              <option value="3">Year 3</option>
+            </select>
+          </div>
+
+          <button
+            type="submit"
+            className="px-5 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors w-full sm:w-auto"
+          >
+            Apply Filters
+          </button>
         </form>
       </div>
 
       {/* Summary Stats */}
-      <div className="row" style={{ marginBottom: 24, gap: 16 }}>
-        <div className="col card" style={{ padding: 16, backgroundColor: "var(--bg-secondary)" }}>
-          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: "bold" }}>MATCHING RESIDENTS</span>
-          <strong style={{ fontSize: 24, color: "var(--brand-red)" }}>{residentsCount}</strong>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6 print:mb-4">
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm print:border print:border-black print:p-2 print:shadow-none">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block print:text-black">Matching Residents</span>
+          <strong className="text-2xl font-bold text-brand-red mt-1 block print:text-xl print:text-black">{residentsCount}</strong>
         </div>
-        <div className="col card" style={{ padding: 16, backgroundColor: "var(--bg-secondary)" }}>
-          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: "bold" }}>TOTAL COMPLETED LOGS</span>
-          <strong style={{ fontSize: 24, color: "var(--brand-gold)" }}>{logs.length}</strong>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm print:border print:border-black print:p-2 print:shadow-none">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block print:text-black">Total Completed Logs</span>
+          <strong className="text-2xl font-bold text-brand-gold mt-1 block print:text-xl print:text-black">{logs.length}</strong>
         </div>
-        <div className="col card" style={{ padding: 16, backgroundColor: "var(--bg-secondary)" }}>
-          <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: "bold" }}>ACTIVE PERIOD</span>
-          <strong style={{ fontSize: 18, color: "var(--text)" }}>{activePeriod?.name || "None"}</strong>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm print:border print:border-black print:p-2 print:shadow-none">
+          <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider block print:text-black">Active Period</span>
+          <strong className="text-lg font-bold text-gray-800 mt-1.5 block truncate print:text-base print:text-black">{activePeriod?.name || "None"}</strong>
         </div>
       </div>
 
       {/* Categorized Procedure Table */}
-      <div className="card" style={{ padding: 20 }}>
-        <h3>Procedure Logs Breakdown</h3>
-        <table className="table" style={{ width: "100%", borderCollapse: "collapse", marginTop: 16 }}>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm print:border print:border-black print:shadow-none print:rounded-none">
+        <div className="px-5 py-4 border-b border-gray-100 print:hidden">
+          <h2 className="text-[13.5px] font-bold text-gray-900">Procedure Logs Breakdown</h2>
+        </div>
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ borderBottom: "2px solid var(--border)" }}>
-              <th style={{ textAlign: "left", padding: 10 }}>Procedure Name</th>
-              <th style={{ textAlign: "center", padding: 10, width: 150 }}>Completions</th>
-              <th style={{ textAlign: "center", padding: 10, width: 150 }}>Target (Cohort)</th>
-              <th style={{ textAlign: "right", padding: 10, width: 150 }}>Cohort Accomplished</th>
+            <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Procedure Name</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32 print:text-black print:font-bold">Completions</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32 print:text-black print:font-bold">Target (Cohort)</th>
+              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-40 print:text-black print:font-bold">Cohort Accomplished</th>
             </tr>
           </thead>
           <tbody>
@@ -209,8 +177,8 @@ export default async function AdminProcedureSummaryPage({
               return (
                 <React.Fragment key={type.id}>
                   {/* Category Header Row */}
-                  <tr className="proc-type-header" style={{ backgroundColor: "var(--bg-secondary)", borderBottom: "2px solid var(--border)" }}>
-                    <td colSpan={4} style={{ padding: "10px 8px", fontWeight: "bold", color: "var(--brand-red)", fontSize: 14 }}>
+                  <tr className="bg-gray-50/70 border-y border-gray-200/60 print:bg-gray-200 print:border-y print:border-black print:break-inside-avoid">
+                    <td colSpan={4} className="px-4 py-2.5 font-bold text-brand-red text-[13.5px] print:text-black">
                       📂 {type.name} Procedures
                     </td>
                   </tr>
@@ -218,16 +186,20 @@ export default async function AdminProcedureSummaryPage({
                     const completed = logCounts.get(p.id) ?? 0;
                     const completionRate = Math.min(Math.round((completed / totalTarget) * 100), 100);
 
+                    let rateColor = "text-red-600";
+                    if (completionRate >= 80) {
+                      rateColor = "text-green-700 print:text-black";
+                    } else if (completionRate >= 50) {
+                      rateColor = "text-amber-600 print:text-black";
+                    }
+
                     return (
-                      <tr key={p.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                        <td style={{ padding: "8px 16px" }}>{p.name}</td>
-                        <td style={{ padding: 8, textAlign: "center", fontWeight: "bold" }}>{completed}</td>
-                        <td style={{ padding: 8, textAlign: "center", color: "var(--muted)" }}>{totalTarget}</td>
-                        <td style={{ padding: 8, textAlign: "right" }}>
-                          <span style={{
-                            fontWeight: "bold",
-                            color: completionRate >= 80 ? "#137333" : completionRate >= 50 ? "#cd9804" : "#c52744"
-                          }}>
+                      <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
+                        <td className="px-5 py-2.5 text-[13px] text-gray-700 print:text-black">{p.name}</td>
+                        <td className="px-4 py-2.5 text-[13px] font-semibold text-gray-900 text-center print:text-black">{completed}</td>
+                        <td className="px-4 py-2.5 text-[13px] text-gray-400 text-center print:text-black">{totalTarget}</td>
+                        <td className="px-4 py-2.5 text-[13px] text-right">
+                          <span className={`font-semibold ${rateColor}`}>
                             {completed}/{totalTarget} ({completionRate}%)
                           </span>
                         </td>

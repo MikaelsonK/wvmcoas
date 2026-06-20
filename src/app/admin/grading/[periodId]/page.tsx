@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireRole } from "@/lib/requireRole";
 import { prisma } from "@/lib/prisma";
 import { PrintButton } from "@/components/PrintButton";
+import { revertEvaluation } from "../actions";
 
 type ScoreDetail = {
   raw: number;
@@ -102,9 +103,13 @@ export default async function GradingSheetPage({
   const period = await prisma.period.findUnique({ where: { id: periodId } });
   if (!period) {
     return (
-      <div className="card">
-        <h1>Period not found</h1>
-        <Link href="/admin/periods">Back</Link>
+      <div className="p-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6 text-center max-w-md mx-auto">
+          <h1 className="text-lg font-bold text-gray-900 mb-2">Period not found</h1>
+          <Link href="/admin/periods" className="text-sm font-semibold text-brand-red hover:underline">
+            Back to periods list
+          </Link>
+        </div>
       </div>
     );
   }
@@ -201,67 +206,37 @@ export default async function GradingSheetPage({
   const competenceAvg = hasRows ? Math.round(filteredRows.reduce((sum, r) => sum + r.scores.competence.pct, 0) / filteredRows.length) : 0;
 
   return (
-    <div className="card">
-      {/* Dynamic inline print styling */}
-      <style dangerouslySetInnerHTML={{__html: `
-        @media print {
-          body {
-            background: white !important;
-            color: black !important;
-            font-family: 'Poppins', sans-serif !important;
-          }
-          aside, header, nav, button, .button-primary, .button-secondary, .no-print, .tabs-container {
-            display: none !important;
-          }
-          main {
-            padding: 0 !important;
-            margin: 0 !important;
-            background: transparent !important;
-          }
-          .card {
-            border: none !important;
-            box-shadow: none !important;
-            padding: 0 !important;
-            background: transparent !important;
-          }
-          table {
-            border-collapse: collapse !important;
-            width: 100% !important;
-            margin-top: 16px !important;
-          }
-          th, td {
-            border: 1px solid #111 !important;
-            padding: 8px !important;
-            font-size: 11px !important;
-            color: #000 !important;
-          }
-          tr {
-            page-break-inside: avoid !important;
-          }
-        }
-      `}} />
-
-      <div className="row" style={{ alignItems: "center", marginBottom: 20 }}>
-        <div className="col">
-          <h1>Grading Sheet & Analytics</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
-            <strong>{period.name}</strong>{" "}
-            <small>({period.startDate.toISOString().slice(0, 10)} → {period.endDate.toISOString().slice(0, 10)})</small>
+    <div className="p-6 print:p-0 print:bg-white print:text-black">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5 print:border-none print:pb-0">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900 print:text-xl print:font-bold">Grading Sheet & Analytics</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            <span className="font-semibold text-gray-600">{period.name}</span>{" "}
+            <span className="text-xs">({period.startDate.toISOString().slice(0, 10)} → {period.endDate.toISOString().slice(0, 10)})</span>
           </p>
         </div>
-        <div className="col text-center no-print" style={{ textAlign: "right", display: "flex", justifyContent: "flex-end", gap: 8 }}>
-          <PrintButton label="🖨️ Print Sheet" className="button-primary" style={{ backgroundColor: "var(--brand-red)" }} />
-          <Link href={`/api/admin/grading/${periodId}/export`} className="button-primary" style={{ textDecoration: "none", backgroundColor: "var(--brand-gold)", display: "inline-flex", alignItems: "center" }}>
+        <div className="flex gap-2.5 items-center print:hidden">
+          <PrintButton
+            label="🖨️ Print Sheet"
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] transition-colors"
+          />
+          <Link
+            href={`/api/admin/grading/${periodId}/export`}
+            className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-gold hover:bg-[#a37903] transition-colors"
+          >
             Export CSV
           </Link>
-          <Link href="/admin/periods" className="button-secondary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
+          <Link
+            href="/admin/periods"
+            className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+          >
             ← Back to Periods
           </Link>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="row tabs-container" style={{ borderBottom: "2px solid var(--border)", paddingBottom: 0, marginBottom: 24 }}>
+      <div className="flex border-b border-gray-200 mb-6 print:hidden">
         {["all", "1", "2", "3"].map((y) => {
           const isActive = activeYear === y;
           const label = y === "all" ? "All Residents" : `Year ${y}`;
@@ -269,14 +244,11 @@ export default async function GradingSheetPage({
             <Link
               key={y}
               href={`/admin/grading/${periodId}?year=${y}`}
-              style={{
-                padding: "10px 20px",
-                textDecoration: "none",
-                fontWeight: isActive ? "bold" : "normal",
-                color: isActive ? "var(--brand-red)" : "var(--muted)",
-                borderBottom: isActive ? "3px solid var(--brand-red)" : "3px solid transparent",
-                marginBottom: "-2px",
-              }}
+              className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                isActive
+                  ? "border-brand-red text-brand-red font-bold"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-250"
+              }`}
             >
               {label}
             </Link>
@@ -285,9 +257,11 @@ export default async function GradingSheetPage({
       </div>
 
       {/* Grade Summary Cards (Class Averages) */}
-      <div style={{ marginBottom: 32 }}>
-        <h3 style={{ marginBottom: 16 }}>Class Performance Summary ({activeYear === "all" ? "All Years" : `Year ${activeYear}`})</h3>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 16 }}>
+      <div className="mb-8">
+        <h3 className="text-[13.5px] font-bold text-gray-900 mb-4 print:text-sm print:font-semibold">
+          Class Performance Summary ({activeYear === "all" ? "All Years" : `Year ${activeYear}`})
+        </h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
           {[
             { name: "Quizzes", avg: quizAvg, color: "#1a73e8" },
             { name: "Long Exams", avg: longExamAvg, color: "#c52744" },
@@ -296,11 +270,15 @@ export default async function GradingSheetPage({
             { name: "RISE", avg: riseAvg, color: "#7b1fa2" },
             { name: "Clinical Competence", avg: competenceAvg, color: "#00acc1" }
           ].map((item, idx) => (
-            <div key={idx} className="card" style={{ padding: 16, borderLeft: `5px solid ${item.color}`, backgroundColor: "var(--bg-secondary)", display: "flex", flexDirection: "column", gap: 4 }}>
-              <span style={{ fontSize: 12, color: "var(--muted)", fontWeight: "bold", textTransform: "uppercase" }}>{item.name}</span>
-              <strong style={{ fontSize: 24, color: "var(--text)" }}>{item.avg}%</strong>
-              <div style={{ width: "100%", height: 6, backgroundColor: "var(--border)", borderRadius: 3, overflow: "hidden", marginTop: 4 }}>
-                <div style={{ width: `${item.avg}%`, height: "100%", backgroundColor: item.color }} />
+            <div
+              key={idx}
+              className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex flex-col gap-2 print:border print:border-black print:p-2 print:shadow-none"
+              style={{ borderLeftWidth: "4px", borderLeftColor: item.color }}
+            >
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider block print:text-black">{item.name}</span>
+              <strong className="text-xl font-bold text-gray-900 block print:text-base print:text-black">{item.avg}%</strong>
+              <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1 print:hidden">
+                <div className="h-full rounded-full" style={{ width: `${item.avg}%`, backgroundColor: item.color }} />
               </div>
             </div>
           ))}
@@ -308,58 +286,66 @@ export default async function GradingSheetPage({
       </div>
 
       {/* Detailed Grading Sheet Table */}
-      <div style={{ marginBottom: 32 }}>
-        <h3>Detailed Resident Grading Sheet</h3>
-        <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm mb-8 print:border print:border-black print:shadow-none print:rounded-none">
+        <div className="px-5 py-4 border-b border-gray-100 print:hidden">
+          <h2 className="text-[13.5px] font-bold text-gray-900">Detailed Resident Grading Sheet</h2>
+        </div>
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ borderBottom: "2px solid var(--border)" }}>
-              <th style={{ textAlign: "left", padding: 8 }}>Resident</th>
-              <th style={{ textAlign: "center", padding: 8 }}>Year</th>
-              <th style={{ textAlign: "center", padding: 8 }}>Quizzes</th>
-              <th style={{ textAlign: "center", padding: 8 }}>Long Exams</th>
-              <th style={{ textAlign: "center", padding: 8 }}>Oral Exam</th>
-              <th style={{ textAlign: "center", padding: 8 }}>OSCE</th>
-              <th style={{ textAlign: "center", padding: 8 }}>RISE</th>
-              <th style={{ textAlign: "center", padding: 8 }}>Clinical Comp.</th>
-              <th style={{ textAlign: "right", padding: 8 }}>Evaluations (Sub)</th>
-              <th style={{ textAlign: "right", padding: 8 }}>Total Points</th>
+            <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Resident</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Year</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Quizzes</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Long Exams</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Oral Exam</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">OSCE</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">RISE</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Clinical Comp.</th>
+              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Evaluations</th>
+              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Total Points</th>
             </tr>
           </thead>
           <tbody>
             {filteredRows.length === 0 ? (
               <tr>
-                <td colSpan={10} style={{ padding: 12, textAlign: "center", color: "var(--muted)" }}>
+                <td colSpan={10} className="px-5 py-6 text-sm text-gray-400 text-center">
                   No resident records found for this Year Level.
                 </td>
               </tr>
             ) : (
               filteredRows.map((r) => (
-                <tr key={r.residentId} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: 8 }}>
-                    <strong>{r.name}</strong><br />
-                    <small style={{ color: "var(--muted)" }} className="no-print">{r.email}</small>
+                <tr key={r.residentId} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
+                  <td className="px-4 py-3">
+                    <div className="text-[13px] font-semibold text-gray-900">{r.name}</div>
+                    <div className="text-[11px] text-gray-400 print:hidden">{r.email}</div>
                   </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>{r.yearLevel ?? "-"}</td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <strong>{r.scores.quiz.raw}</strong> <span style={{ fontSize: 11, color: "var(--muted)" }}>({r.scores.quiz.pct}%)</span>
+                  <td className="px-4 py-3 text-[13px] text-gray-500 text-center">{r.yearLevel ?? "-"}</td>
+                  <td className="px-4 py-3 text-[13px] text-center">
+                    <strong className="text-gray-900">{r.scores.quiz.raw}</strong>{" "}
+                    <span className="text-[11px] text-gray-400">({r.scores.quiz.pct}%)</span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <strong>{r.scores.longExam.raw}</strong> <span style={{ fontSize: 11, color: "var(--muted)" }}>({r.scores.longExam.pct}%)</span>
+                  <td className="px-4 py-3 text-[13px] text-center">
+                    <strong className="text-gray-900">{r.scores.longExam.raw}</strong>{" "}
+                    <span className="text-[11px] text-gray-400">({r.scores.longExam.pct}%)</span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <strong>{r.scores.oralExam.raw}</strong> <span style={{ fontSize: 11, color: "var(--muted)" }}>({r.scores.oralExam.pct}%)</span>
+                  <td className="px-4 py-3 text-[13px] text-center">
+                    <strong className="text-gray-900">{r.scores.oralExam.raw}</strong>{" "}
+                    <span className="text-[11px] text-gray-400">({r.scores.oralExam.pct}%)</span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <strong>{r.scores.osce.raw}</strong> <span style={{ fontSize: 11, color: "var(--muted)" }}>({r.scores.osce.pct}%)</span>
+                  <td className="px-4 py-3 text-[13px] text-center">
+                    <strong className="text-gray-900">{r.scores.osce.raw}</strong>{" "}
+                    <span className="text-[11px] text-gray-400">({r.scores.osce.pct}%)</span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <strong>{r.scores.rise.raw}</strong> <span style={{ fontSize: 11, color: "var(--muted)" }}>({r.scores.rise.pct}%)</span>
+                  <td className="px-4 py-3 text-[13px] text-center">
+                    <strong className="text-gray-900">{r.scores.rise.raw}</strong>{" "}
+                    <span className="text-[11px] text-gray-400">({r.scores.rise.pct}%)</span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <strong>{r.scores.competence.raw}</strong> <span style={{ fontSize: 11, color: "var(--muted)" }}>({r.scores.competence.pct}%)</span>
+                  <td className="px-4 py-3 text-[13px] text-center">
+                    <strong className="text-gray-900">{r.scores.competence.raw}</strong>{" "}
+                    <span className="text-[11px] text-gray-400">({r.scores.competence.pct}%)</span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>{r.evaluationsCount}</td>
-                  <td style={{ padding: 8, textAlign: "right", color: "var(--brand-red)", fontWeight: "bold" }}>
+                  <td className="px-4 py-3 text-[13px] text-gray-500 text-right">{r.evaluationsCount}</td>
+                  <td className="px-4 py-3 text-[13px] font-bold text-brand-red text-right print:text-black">
                     {r.totalPoints}
                   </td>
                 </tr>
@@ -370,52 +356,54 @@ export default async function GradingSheetPage({
       </div>
 
       {/* Evaluations List Section (no-print) */}
-      <div className="card no-print" style={{ padding: 20 }}>
-        <h3>Submitted Evaluations Log</h3>
-        <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm print:hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h2 className="text-[13.5px] font-bold text-gray-900">Submitted Evaluations Log</h2>
+        </div>
+        <table className="w-full border-collapse">
           <thead>
-            <tr style={{ borderBottom: "2px solid var(--border)" }}>
-              <th style={{ textAlign: "left", padding: 8 }}>Resident</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Evaluator</th>
-              <th style={{ textAlign: "left", padding: 8 }}>Form</th>
-              <th style={{ textAlign: "center", padding: 8 }}>Status</th>
-              <th style={{ textAlign: "right", padding: 8 }}>Actions</th>
+            <tr className="bg-gray-50 border-b border-gray-200">
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Resident</th>
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Evaluator</th>
+              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Form</th>
+              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Status</th>
+              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody>
             {evaluations.length === 0 ? (
               <tr>
-                <td colSpan={5} style={{ padding: 12, textAlign: "center", color: "var(--muted)" }}>
+                <td colSpan={5} className="px-5 py-6 text-sm text-gray-400 text-center">
                   No evaluations submitted yet.
                 </td>
               </tr>
             ) : (
               evaluations.map((e) => (
-                <tr key={e.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: 8 }}>{e.resident.name}</td>
-                  <td style={{ padding: 8 }}>{e.evaluator.name}</td>
-                  <td style={{ padding: 8 }}>{e.form.title}</td>
-                  <td style={{ padding: 8, textAlign: "center" }}>
-                    <span style={{
-                      padding: "2px 6px",
-                      borderRadius: 4,
-                      fontSize: 11,
-                      backgroundColor: e.status === "SUBMITTED" ? "#e6f4ea" : "#feedf0",
-                      color: e.status === "SUBMITTED" ? "#137333" : "#c52744",
-                      fontWeight: "500"
-                    }}>
+                <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-[13px] font-medium text-gray-900">{e.resident.name}</td>
+                  <td className="px-4 py-3 text-[13px] text-gray-500">{e.evaluator.name}</td>
+                  <td className="px-4 py-3 text-[13px] text-gray-500">{e.form.title}</td>
+                  <td className="px-4 py-3 text-center">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                      e.status === "SUBMITTED"
+                        ? "bg-green-50 text-green-700 border border-green-200"
+                        : "bg-red-50 text-red-700 border border-red-200"
+                    }`}>
                       {e.status}
                     </span>
                   </td>
-                  <td style={{ padding: 8, textAlign: "right" }}>
+                  <td className="px-4 py-3 text-right">
                     {e.status === "SUBMITTED" ? (
-                      <form method="POST" action={`/api/admin/evaluations/${e.id}/revert?periodId=${periodId}`} style={{ display: "inline" }}>
-                        <button type="submit" className="button-secondary" style={{ padding: "4px 8px", fontSize: 12 }}>
+                      <form action={revertEvaluation.bind(null, e.id, periodId)} className="inline">
+                        <button
+                          type="submit"
+                          className="text-[11px] font-medium text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-2.5 py-1 rounded transition-colors"
+                        >
                           Revert to Draft
                         </button>
                       </form>
                     ) : (
-                      <span style={{ fontSize: 12, color: "var(--muted)" }}>No actions</span>
+                      <span className="text-xs text-gray-400">No actions</span>
                     )}
                   </td>
                 </tr>

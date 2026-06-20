@@ -1,14 +1,38 @@
 import { requireRole } from "@/lib/requireRole";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
+import { CreateCategoryForm } from "@/components/CreateCategoryForm";
+import { CreateProcedureForm } from "@/components/CreateProcedureForm";
+import { deleteCategory, deleteProcedure } from "./actions";
 
-export default async function AdminProceduresPage() {
+export default async function AdminProceduresPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   await requireRole(["ADMIN"]);
+  const { q = "" } = await searchParams;
 
+  // Retrieve matching categories and procedures
   const procedureTypes = await prisma.procedureType.findMany({
     include: {
-      procedures: true,
+      procedures: {
+        where: q ? { name: { contains: q, mode: "insensitive" } } : {},
+        orderBy: { name: "asc" },
+      },
     },
+    where: q
+      ? {
+          OR: [
+            { name: { contains: q, mode: "insensitive" } },
+            { procedures: { some: { name: { contains: q, mode: "insensitive" } } } },
+          ],
+        }
+      : {},
+    orderBy: { name: "asc" },
+  });
+
+  // All categories for the dropdown in procedure creation
+  const allCategories = await prisma.procedureType.findMany({
     orderBy: { name: "asc" },
   });
 
@@ -16,114 +40,87 @@ export default async function AdminProceduresPage() {
   type ProcRow = TypeRow["procedures"][number];
 
   return (
-    <div className="card">
-      <div className="row" style={{ alignItems: "center", marginBottom: 24 }}>
-        <div className="col">
-          <h1>Procedure Management</h1>
-        </div>
-        <div className="col text-center" style={{ textAlign: "right" }}>
-          <Link href="/admin" className="button-secondary" style={{ textDecoration: "none" }}>
-            ← Back to Admin Console
-          </Link>
-        </div>
+    <div className="p-6">
+      <div className="mb-5">
+        <h1 className="text-lg font-bold text-gray-900">Procedures Config</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Define procedure categories and individual procedures.</p>
       </div>
 
-      <div className="row">
+      <div className="flex gap-5 items-start flex-wrap">
+
         {/* Forms column */}
-        <div className="col" style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {/* Create Procedure Type Card */}
-          <div className="card" style={{ padding: 20 }}>
-            <h3>Create Procedure Type</h3>
-            <form method="POST" action="/api/admin/procedures">
-              <input type="hidden" name="formType" value="type" />
-              <div className="form-group">
-                <label className="form-label" htmlFor="type-name">Type Name</label>
-                <input 
-                  id="type-name"
-                  name="name" 
-                  className="input-field" 
-                  placeholder="e.g. Major Surgery, Minor Procedure" 
-                  required 
-                />
-              </div>
-              <button type="submit" className="button-primary" style={{ width: "100%", marginTop: 8 }}>
-                Add Procedure Type
-              </button>
-            </form>
+        <div className="w-72 shrink-0 flex flex-col gap-4">
+
+          {/* Create Category */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h2 className="text-[13.5px] font-bold text-gray-900 mb-4">Create Category</h2>
+            <CreateCategoryForm />
           </div>
 
-          {/* Create Procedure Card */}
-          <div className="card" style={{ padding: 20 }}>
-            <h3>Create Procedure</h3>
-            <form method="POST" action="/api/admin/procedures">
-              <input type="hidden" name="formType" value="procedure" />
-              <div className="form-group">
-                <label className="form-label" htmlFor="procedure-name">Procedure Name</label>
-                <input 
-                  id="procedure-name"
-                  name="name" 
-                  className="input-field" 
-                  placeholder="e.g. Appendectomy, Intubation" 
-                  required 
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label" htmlFor="proc-type-id">Procedure Type</label>
-                <select id="proc-type-id" name="procedureTypeId" className="input-field" required>
-                  <option value="">Select Category...</option>
-                  {procedureTypes.map((t: TypeRow) => (
-                    <option key={t.id} value={t.id}>{t.name}</option>
-                  ))}
-                </select>
-              </div>
-
-              <button type="submit" className="button-primary" style={{ width: "100%", marginTop: 8 }}>
-                Add Procedure
-              </button>
-            </form>
+          {/* Create Procedure */}
+          <div className="bg-white border border-gray-200 rounded-xl p-5">
+            <h2 className="text-[13.5px] font-bold text-gray-900 mb-4">Create Procedure</h2>
+            <CreateProcedureForm categories={allCategories} />
           </div>
         </div>
 
-        {/* List column */}
-        <div className="col card" style={{ padding: 20, flex: 2 }}>
-          <h3>Existing Categories & Procedures</h3>
+        {/* List */}
+        <div className="flex-1 min-w-[320px] bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3">
+            <h2 className="text-[13.5px] font-bold text-gray-900 shrink-0">Categories & Procedures</h2>
+            <form className="flex-1 max-w-[240px]">
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Search categories or procedures…"
+                className="w-full px-3 py-1.5 text-[12.5px] text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 placeholder:text-gray-400"
+              />
+            </form>
+          </div>
           {procedureTypes.length === 0 ? (
-            <p style={{ color: "var(--muted)" }}>No categories or procedures set up yet.</p>
+            <p className="px-5 py-6 text-sm text-gray-400">
+              {q ? `No results matching "${q}".` : "No categories or procedures set up yet."}
+            </p>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
+            <div className="divide-y divide-gray-100">
               {procedureTypes.map((type: TypeRow) => (
-                <div key={type.id} style={{ border: "1px solid var(--border)", borderRadius: 8, padding: 16, backgroundColor: "var(--bg-secondary)" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-                    <h4 style={{ margin: 0, fontSize: 18, color: "var(--brand-red)" }}>{type.name}</h4>
-                    <form method="POST" action={`/api/admin/procedures/${type.id}?action=delete&item=type`}>
-                      <button type="submit" className="button-primary" style={{ padding: "4px 8px", fontSize: 12, backgroundColor: "var(--brand-crimson)" }}>
+                <div key={type.id} className="px-5 py-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-[13px] font-bold text-brand-red">{type.name}</span>
+                    <form action={deleteCategory.bind(null, type.id)} className="inline">
+                      <button
+                        type="submit"
+                        className="text-[11px] font-medium text-red-600 hover:text-red-700 border border-red-200 hover:border-red-300 bg-red-50 hover:bg-red-100 px-2.5 py-1 rounded transition-colors"
+                      >
                         Delete Category
                       </button>
                     </form>
                   </div>
-
                   {type.procedures.length === 0 ? (
-                    <p style={{ color: "var(--muted)", margin: 0, fontSize: 14 }}>No procedures in this category.</p>
+                    <p className="text-[12px] text-gray-400 pl-2">No procedures in this category.</p>
                   ) : (
-                    <ul style={{ margin: 0, paddingLeft: 20 }}>
+                    <div className="flex flex-col divide-y divide-gray-100 pl-2">
                       {type.procedures.map((proc: ProcRow) => (
-                        <li key={proc.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "6px 0", borderBottom: "1px solid var(--border)" }}>
-                          <span>{proc.name}</span>
-                          <form method="POST" action={`/api/admin/procedures/${proc.id}?action=delete&item=procedure`}>
-                            <button type="submit" className="button-primary" style={{ padding: "2px 6px", fontSize: 10, backgroundColor: "var(--brand-crimson)" }}>
+                        <div key={proc.id} className="flex items-center justify-between py-2">
+                          <span className="text-[13px] text-gray-700">{proc.name}</span>
+                          <form action={deleteProcedure.bind(null, proc.id)} className="inline">
+                            <button
+                              type="submit"
+                              className="text-[11px] font-medium text-red-500 hover:text-red-700 border border-red-100 hover:border-red-200 bg-red-50 hover:bg-red-100 px-2 py-0.5 rounded transition-colors"
+                            >
                               Delete
                             </button>
                           </form>
-                        </li>
+                        </div>
                       ))}
-                    </ul>
+                    </div>
                   )}
                 </div>
               ))}
             </div>
           )}
         </div>
+
       </div>
     </div>
   );

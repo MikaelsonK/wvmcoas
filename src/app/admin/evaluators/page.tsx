@@ -1,79 +1,83 @@
 import { requireRole } from "@/lib/requireRole";
 import { prisma } from "@/lib/prisma";
-import Link from "next/link";
 import { RegisterEvaluatorForm } from "@/components/RegisterEvaluatorForm";
 
-export default async function AdminEvaluatorsPage() {
+export default async function AdminEvaluatorsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
   await requireRole(["ADMIN"]);
+  const { q = "" } = await searchParams;
 
   const evaluators = await prisma.user.findMany({
     select: { id: true, name: true, email: true, contactNo: true },
-    where: { role: "EVALUATOR" },
+    where: {
+      role: "EVALUATOR",
+      ...(q ? { OR: [{ name: { contains: q, mode: "insensitive" } }, { email: { contains: q, mode: "insensitive" } }] } : {}),
+    },
     orderBy: { name: "asc" },
   });
 
   type EvaluatorRow = (typeof evaluators)[number];
 
   return (
-    <div className="card">
-      <div className="row" style={{ alignItems: "center", marginBottom: 24 }}>
-        <div className="col">
-          <h1>Evaluators (Doctors)</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>Manage attending physicians and assessment supervisors.</p>
-        </div>
-        <div className="col text-center" style={{ textAlign: "right" }}>
-          <Link href="/admin" className="button-secondary" style={{ textDecoration: "none" }}>
-            ← Back to Admin Console
-          </Link>
-        </div>
+    <div className="p-6">
+      <div className="mb-5">
+        <h1 className="text-lg font-bold text-gray-900">Evaluators (Doctors)</h1>
+        <p className="text-sm text-gray-400 mt-0.5">Manage attending physicians and assessment supervisors.</p>
       </div>
 
-      <div className="row">
-        {/* Create Card Column */}
-        <div className="col card" style={{ padding: 20, marginBottom: 20 }}>
-          <h3>Register Evaluator</h3>
+      <div className="flex gap-5 items-start flex-wrap">
+
+        {/* Register form */}
+        <div className="w-72 shrink-0 bg-white border border-gray-200 rounded-xl p-5">
+          <h2 className="text-[13.5px] font-bold text-gray-900 mb-4">Register Evaluator</h2>
           <RegisterEvaluatorForm />
         </div>
 
-        {/* List Card Column */}
-        <div className="col card" style={{ padding: 20, flex: 2 }}>
-          <h3>Registry List</h3>
+        {/* List */}
+        <div className="flex-1 min-w-[320px] bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3">
+            <h2 className="text-[13.5px] font-bold text-gray-900 shrink-0">Registry List</h2>
+            {/* URL-state search */}
+            <form className="flex-1 max-w-[240px]">
+              <input
+                name="q"
+                defaultValue={q}
+                placeholder="Search name or email…"
+                className="w-full px-3 py-1.5 text-[12.5px] text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 placeholder:text-gray-400"
+              />
+            </form>
+          </div>
           {evaluators.length === 0 ? (
-            <p style={{ color: "var(--muted)" }}>No evaluators configured yet.</p>
+            <p className="px-5 py-6 text-sm text-gray-400">
+              {q ? `No evaluators matching "${q}".` : "No evaluators configured yet."}
+            </p>
           ) : (
-            <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+            <table className="w-full">
               <thead>
-                <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                  <th style={{ textAlign: "left", padding: 8 }}>Avatar</th>
-                  <th style={{ textAlign: "left", padding: 8 }}>Name</th>
-                  <th style={{ textAlign: "left", padding: 8 }}>Email</th>
-                  <th style={{ textAlign: "left", padding: 8 }}>Contact No.</th>
+                <tr className="bg-gray-50 border-b border-gray-200">
+                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Name</th>
+                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Email</th>
+                  <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Contact</th>
                 </tr>
               </thead>
               <tbody>
                 {evaluators.map((e: EvaluatorRow) => {
-                  const initials = e.name ? e.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "D";
+                  const initials = e.name ? e.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2) : "D";
                   return (
-                    <tr key={e.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                      <td style={{ padding: 8 }}>
-                        <div style={{
-                          width: 32,
-                          height: 32,
-                          borderRadius: "50%",
-                          backgroundColor: "var(--brand-gold)",
-                          color: "white",
-                          fontWeight: "bold",
-                          display: "flex",
-                          justifyContent: "center",
-                          alignItems: "center",
-                          fontSize: 12
-                        }}>
-                          {initials}
+                    <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-7 h-7 rounded-full bg-brand-gold/15 text-brand-gold text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                            {initials}
+                          </div>
+                          <span className="text-[13px] font-medium text-gray-900">{e.name}</span>
                         </div>
                       </td>
-                      <td style={{ padding: 8 }}><strong>{e.name}</strong></td>
-                      <td style={{ padding: 8 }}>{e.email}</td>
-                      <td style={{ padding: 8 }}>{e.contactNo || "-"}</td>
+                      <td className="px-4 py-3 text-[13px] text-gray-500">{e.email}</td>
+                      <td className="px-4 py-3 text-[13px] text-gray-500">{e.contactNo || "—"}</td>
                     </tr>
                   );
                 })}
@@ -81,6 +85,7 @@ export default async function AdminEvaluatorsPage() {
             </table>
           )}
         </div>
+
       </div>
     </div>
   );
