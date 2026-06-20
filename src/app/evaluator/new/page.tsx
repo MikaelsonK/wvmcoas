@@ -1,5 +1,7 @@
 import { requireRole } from "@/lib/requireRole";
 import { prisma } from "@/lib/prisma";
+import Link from "next/link";
+import { NewEvaluationForm } from "@/components/NewEvaluationForm";
 
 export default async function NewEvaluationPage() {
   await requireRole(["EVALUATOR"]);
@@ -8,48 +10,24 @@ export default async function NewEvaluationPage() {
   const periods = await prisma.period.findMany({ orderBy: { startDate: "desc" } });
   const forms = await prisma.form.findMany({ include: { questions: true }, orderBy: { createdAt: "desc" } });
 
-  type ResidentRow = (typeof residents)[number];
-  type PeriodRow = (typeof periods)[number];
-  type FormRow = (typeof forms)[number];
-
-
   return (
-    <div className="card">
-      <h1>New Evaluation</h1>
-
-      <form method="POST" action="/api/admin/evaluations/prepare" className="card">
-        <div className="row">
-          <div className="col">
-            <label>Resident</label>
-            <select name="residentId" required>
-              <option value="">Select...</option>
-              {residents.map((r: ResidentRow) => (
-                <option key={r.id} value={r.id}>{r.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col">
-            <label>Period</label>
-            <select name="periodId" required>
-              <option value="">Select...</option>
-              {periods.map((p: PeriodRow) => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="col">
-            <label>Form</label>
-            <select name="formId" required>
-              <option value="">Select...</option>
-              {forms.map((f: FormRow) => (
-                <option key={f.id} value={f.id}>{f.title}</option>
-              ))}
-            </select>
-          </div>
+    <div className="p-6 max-w-2xl mx-auto">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">New Evaluation</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Select a resident doctor and forms to begin assessment.</p>
         </div>
+        <Link
+          href="/evaluator"
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+        >
+          ← Back to Dashboard
+        </Link>
+      </div>
 
-        <button style={{ marginTop: 12 }} className="secondary">Load Form</button>
-      </form>
+      <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm">
+        <NewEvaluationForm residents={residents} periods={periods} forms={forms} />
+      </div>
     </div>
   );
 }

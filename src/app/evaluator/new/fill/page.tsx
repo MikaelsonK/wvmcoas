@@ -12,7 +12,7 @@ export default async function FillEvaluationPage({
   await requireRole(["EVALUATOR"]);
 
   const params = await searchParams;
-  let evaluationId = params.evaluationId ?? "";
+  const evaluationId = params.evaluationId ?? "";
   let residentId = params.residentId ?? "";
   let periodId = params.periodId ?? "";
   let formId = params.formId ?? "";
@@ -52,19 +52,20 @@ export default async function FillEvaluationPage({
   }));
 
   return (
-    <div className="card">
-      <div className="row" style={{ alignItems: "center", marginBottom: 20 }}>
-        <div className="col">
-          <h1>{evaluation ? "Edit Evaluation Draft" : "Fill Evaluation Form"}</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
-            Resident: <strong>{resident.name}</strong> | Period: <strong>{period.name}</strong> | Form: <strong>{form.title}</strong>
+    <div className="p-6 max-w-3xl mx-auto">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">{evaluation ? "Edit Evaluation Draft" : "Fill Evaluation Form"}</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
+            Resident: <span className="font-semibold text-gray-600">{resident.name}</span> | Period: <span className="font-semibold text-gray-600">{period.name}</span> | Form: <span className="font-semibold text-gray-600">{form.title}</span>
           </p>
         </div>
-        <div className="col text-center" style={{ textAlign: "right" }}>
-          <Link href="/evaluator" className="button-secondary" style={{ textDecoration: "none" }}>
-            Cancel & Return
-          </Link>
-        </div>
+        <Link
+          href="/evaluator"
+          className="px-4 py-2 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
+        >
+          Cancel & Return
+        </Link>
       </div>
 
       <EvaluationForm

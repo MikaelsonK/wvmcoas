@@ -43,65 +43,72 @@ export default async function EvaluatorHome({
     return `/evaluator?${parts.join("&")}`;
   };
 
+  const selectClass = "px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 w-full sm:w-64";
+
   return (
-    <div className="card">
-      <div className="row" style={{ alignItems: "center", marginBottom: 24 }}>
-        <div className="col">
-          <h1>Evaluations Dashboard</h1>
-          <p style={{ margin: "4px 0 0 0", color: "var(--muted)" }}>
+    <div className="p-6">
+      <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Evaluations Dashboard</h1>
+          <p className="text-sm text-gray-400 mt-0.5">
             Review pending assignments, manage drafts, and browse submitted resident scorecards.
           </p>
         </div>
-        <div className="col text-center" style={{ textAlign: "right" }}>
-          <Link href="/evaluator/new" className="button-primary" style={{ textDecoration: "none" }}>
-            ➕ Submit New Evaluation
-          </Link>
-        </div>
+        <Link
+          href="/evaluator/new"
+          className="px-4 py-2 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] transition-colors"
+        >
+          ➕ Submit New Evaluation
+        </Link>
       </div>
 
       {/* Filters Form */}
-      <div className="card" style={{ padding: 16, marginBottom: 24, backgroundColor: "var(--bg-secondary)" }}>
-        <form method="GET" action="/evaluator">
+      <div className="bg-white border border-gray-200 rounded-xl p-5 mb-6">
+        <form method="GET" action="/evaluator" className="flex flex-wrap gap-4 items-end">
           <input type="hidden" name="status" value={activeTab} />
-          <div className="row" style={{ alignItems: "flex-end", marginBottom: 0 }}>
-            <div className="col form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="filter-period">Filter by Period</label>
-              <select id="filter-period" name="period" className="input-field" defaultValue={selectedPeriod}>
-                <option value="">All Periods</option>
-                {periods.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label" htmlFor="filter-form">Filter by Assessment Form</label>
-              <select id="filter-form" name="form" className="input-field" defaultValue={selectedForm}>
-                <option value="">All Forms</option>
-                {forms.map((f) => (
-                  <option key={f.id} value={f.id}>
-                    {f.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="col-auto" style={{ display: "flex", gap: 8 }}>
-              <button type="submit" className="button-secondary" style={{ padding: "10px 20px" }}>
-                Filter
-              </button>
-              {(selectedPeriod || selectedForm) && (
-                <Link href={`/evaluator?status=${activeTab}`} className="button-secondary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", padding: "10px 20px" }}>
-                  Clear
-                </Link>
-              )}
-            </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="filter-period" className="text-[12.5px] font-semibold text-gray-600">Filter by Period</label>
+            <select id="filter-period" name="period" className={selectClass} defaultValue={selectedPeriod}>
+              <option value="">All Periods</option>
+              {periods.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.name}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label htmlFor="filter-form" className="text-[12.5px] font-semibold text-gray-600">Filter by Assessment Form</label>
+            <select id="filter-form" name="form" className={selectClass} defaultValue={selectedForm}>
+              <option value="">All Forms</option>
+              {forms.map((f) => (
+                <option key={f.id} value={f.id}>
+                  {f.title}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex gap-2 w-full sm:w-auto">
+            <button
+              type="submit"
+              className="flex-1 sm:flex-initial px-5 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
+              Filter
+            </button>
+            {(selectedPeriod || selectedForm) && (
+              <Link
+                href={`/evaluator?status=${activeTab}`}
+                className="flex-1 sm:flex-initial px-5 py-2.5 border border-gray-200 rounded-lg text-sm font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors text-center inline-flex items-center justify-center"
+              >
+                Clear
+              </Link>
+            )}
           </div>
         </form>
       </div>
 
       {/* Status Tabs */}
-      <div className="row" style={{ borderBottom: "2px solid var(--border)", paddingBottom: 0, marginBottom: 20 }}>
+      <div className="flex border-b border-gray-200 mb-6">
         {["DRAFT", "PENDING", "SUBMITTED"].map((status) => {
           const isActive = activeTab === status;
           const label = status === "DRAFT" ? "Drafts" : status === "PENDING" ? "Pending" : "Submitted";
@@ -109,14 +116,11 @@ export default async function EvaluatorHome({
             <Link
               key={status}
               href={tabLink(status)}
-              style={{
-                padding: "10px 20px",
-                textDecoration: "none",
-                fontWeight: isActive ? "bold" : "normal",
-                color: isActive ? "var(--brand-red)" : "var(--muted)",
-                borderBottom: isActive ? "3px solid var(--brand-red)" : "3px solid transparent",
-                marginBottom: "-2px",
-              }}
+              className={`px-5 py-3 text-sm font-medium border-b-2 -mb-px transition-colors ${
+                isActive
+                  ? "border-brand-red text-brand-red font-bold"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-250"
+              }`}
             >
               {label} ({status === activeTab ? evaluations.length : "..."})
             </Link>
@@ -125,45 +129,43 @@ export default async function EvaluatorHome({
       </div>
 
       {/* Table Listing */}
-      <div className="card" style={{ padding: 20 }}>
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm">
         {evaluations.length === 0 ? (
-          <p style={{ color: "var(--muted)" }}>No evaluations found matching the criteria.</p>
+          <p className="px-5 py-6 text-sm text-gray-400">No evaluations found matching the criteria.</p>
         ) : (
-          <table className="table" style={{ width: "100%", borderCollapse: "collapse" }}>
+          <table className="w-full border-collapse">
             <thead>
-              <tr style={{ borderBottom: "2px solid var(--border)" }}>
-                <th style={{ textAlign: "left", padding: 12 }}>Resident Doctor</th>
-                <th style={{ textAlign: "left", padding: 12 }}>Period</th>
-                <th style={{ textAlign: "left", padding: 12 }}>Form Title</th>
-                <th style={{ textAlign: "center", padding: 12 }}>Date Created</th>
-                <th style={{ textAlign: "right", padding: 12 }}>Actions</th>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Resident Doctor</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Period</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Form Title</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-36">Date Created</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-40">Actions</th>
               </tr>
             </thead>
             <tbody>
               {evaluations.map((ev: EvalRow) => (
-                <tr key={ev.id} style={{ borderBottom: "1px solid var(--border)" }}>
-                  <td style={{ padding: 12 }}>
-                    <strong>{ev.resident.name}</strong>
+                <tr key={ev.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-[13px] font-semibold text-gray-900">
+                    {ev.resident.name}
                   </td>
-                  <td style={{ padding: 12 }}>{ev.period.name}</td>
-                  <td style={{ padding: 12 }}>{ev.form.title}</td>
-                  <td style={{ padding: 12, textAlign: "center", fontSize: 13 }}>
+                  <td className="px-4 py-3 text-[13px] text-gray-500">{ev.period.name}</td>
+                  <td className="px-4 py-3 text-[13px] text-gray-500">{ev.form.title}</td>
+                  <td className="px-4 py-3 text-[13px] text-gray-500 text-center">
                     {ev.submittedAt.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })}
                   </td>
-                  <td style={{ padding: 12, textAlign: "right" }}>
+                  <td className="px-4 py-3 text-right">
                     {ev.status !== "SUBMITTED" ? (
                       <Link
                         href={`/evaluator/new/fill?evaluationId=${ev.id}`}
-                        className="button-primary"
-                        style={{ textDecoration: "none", padding: "6px 12px", fontSize: 12, backgroundColor: "var(--brand-gold)" }}
+                        className="inline-flex px-3 py-1.5 rounded-lg text-xs font-semibold text-white bg-brand-gold hover:bg-[#a37903] transition-colors"
                       >
                         ✏️ Continue Draft
                       </Link>
                     ) : (
                       <Link
                         href={`/resident/ratings/${ev.id}`}
-                        className="button-secondary"
-                        style={{ textDecoration: "none", padding: "6px 12px", fontSize: 12 }}
+                        className="inline-flex px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-semibold text-gray-600 bg-white hover:bg-gray-50 transition-colors"
                       >
                         👁️ View Details
                       </Link>
