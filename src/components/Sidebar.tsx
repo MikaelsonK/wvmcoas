@@ -15,10 +15,12 @@ import {
   FileSpreadsheet,
   Network,
   Settings,
+  X,
 } from "lucide-react";
 
 interface SidebarProps {
   role: string;
+  onClose?: () => void;
 }
 
 interface NavItem {
@@ -27,12 +29,13 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-function NavLink({ href, label, icon }: NavItem) {
+function NavLink({ href, label, icon, onClick }: NavItem & { onClick?: () => void }) {
   const pathname = usePathname();
   const active = pathname === href;
   return (
     <Link
       href={href}
+      onClick={onClick}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
         active
           ? "bg-brand-red/8 text-brand-red font-semibold"
@@ -45,16 +48,16 @@ function NavLink({ href, label, icon }: NavItem) {
   );
 }
 
-function Section({ label, items }: { label: string; items: NavItem[] }) {
+function Section({ label, items, onItemClick }: { label: string; items: NavItem[]; onItemClick?: () => void }) {
   return (
     <div className="flex flex-col gap-0.5">
       <p className="text-[10.5px] text-gray-400 uppercase tracking-widest font-semibold px-3 mb-1">{label}</p>
-      {items.map(item => <NavLink key={item.href} {...item} />)}
+      {items.map(item => <NavLink key={item.href} {...item} onClick={onItemClick} />)}
     </div>
   );
 }
 
-export function Sidebar({ role }: SidebarProps) {
+export function Sidebar({ role, onClose }: SidebarProps) {
   const adminFeatures: NavItem[] = [
     { href: "/admin",                    label: "Dashboard",          icon: <LayoutDashboard size={15} /> },
     { href: "/admin/periods",            label: "Grading Sheet",      icon: <ClipboardList size={15} /> },
@@ -85,26 +88,37 @@ export function Sidebar({ role }: SidebarProps) {
     <aside className="w-[240px] shrink-0 bg-white border-r border-gray-200 flex flex-col gap-5 px-3 py-5 overflow-y-auto">
 
       {/* Logo */}
-      <div className="flex items-center gap-2.5 px-3 mb-1">
-        <div className="w-7 h-7 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
-          <Image src="/oas_logo.png" alt="OAS Portal" width={28} height={28} className="object-cover" />
+      <div className="flex items-center justify-between px-3 mb-1">
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
+            <Image src="/oas_logo.png" alt="OAS Portal" width={28} height={28} className="object-cover" />
+          </div>
+          <span className="text-[13.5px] font-bold text-gray-900 tracking-tight">OAS Portal</span>
         </div>
-        <span className="text-[13.5px] font-bold text-gray-900 tracking-tight">OAS Portal</span>
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 md:hidden outline-none cursor-pointer flex items-center justify-center"
+            aria-label="Close menu"
+          >
+            <X size={16} />
+          </button>
+        )}
       </div>
 
       {role === "ADMIN" && (
         <>
-          <Section label="Features" items={adminFeatures} />
-          <Section label="System" items={adminSystem} />
+          <Section label="Features" items={adminFeatures} onItemClick={onClose} />
+          <Section label="System" items={adminSystem} onItemClick={onClose} />
         </>
       )}
 
       {role === "EVALUATOR" && (
-        <Section label="Features" items={evaluatorLinks} />
+        <Section label="Features" items={evaluatorLinks} onItemClick={onClose} />
       )}
 
       {role === "RESIDENT" && (
-        <Section label="Features" items={residentLinks} />
+        <Section label="Features" items={residentLinks} onItemClick={onClose} />
       )}
     </aside>
   );

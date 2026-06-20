@@ -40,20 +40,20 @@ export default async function AdminPage() {
   }
 
   return (
-    <div className="p-6 max-w-4xl">
+    <div className="p-4 sm:p-6 max-w-4xl">
       <h1 className="text-lg font-bold text-gray-900 mb-1">Admin Console</h1>
       <p className="text-sm text-gray-400 mb-6">Manage the OAS Portal system.</p>
 
       <section className="mb-6">
         <p className="text-[10.5px] text-gray-400 uppercase tracking-widest font-semibold mb-3">Features</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {features.map(f => <NavCard key={f.href} {...f} />)}
         </div>
       </section>
 
       <section>
         <p className="text-[10.5px] text-gray-400 uppercase tracking-widest font-semibold mb-3">System Configuration</p>
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {system.map(f => <NavCard key={f.href} {...f} />)}
         </div>
       </section>

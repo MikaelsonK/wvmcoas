@@ -4,6 +4,7 @@ import Link from "next/link";
 import React from "react";
 import { PrintButton } from "@/components/PrintButton";
 import { ProcedureLogForm } from "@/components/ProcedureLogForm";
+import { SearchBar } from "@/components/SearchBar";
 
 export default async function ResidentProceduresPage({
   searchParams,
@@ -145,14 +146,7 @@ export default async function ResidentProceduresPage({
                 Accomplishments vs required target ({targetProceduresCount} logs per procedure).
               </p>
             </div>
-            <form className="max-w-[200px] flex-1">
-              <input
-                name="q"
-                defaultValue={q}
-                placeholder="Search procedures…"
-                className="w-full px-3 py-1.5 text-[12.5px] text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 placeholder:text-gray-400"
-              />
-            </form>
+            <SearchBar placeholder="Search procedures…" defaultValue={q} className="max-w-[200px]" />
           </div>
           <table className="w-full border-collapse">
             <thead>

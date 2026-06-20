@@ -85,7 +85,7 @@ export default async function AdminProcedureSummaryPage({
   const selectClass = "px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 w-full sm:w-64";
 
   return (
-    <div className="p-6 print:p-0 print:bg-white print:text-black">
+    <div className="p-4 sm:p-6 print:p-0 print:bg-white print:text-black">
       <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5 print:border-none">
         <div>
           <h1 className="text-lg font-bold text-gray-900 print:text-xl print:font-bold">Procedure Monitoring & Summary</h1>
@@ -161,56 +161,58 @@ export default async function AdminProcedureSummaryPage({
         <div className="px-5 py-4 border-b border-gray-100 print:hidden">
           <h2 className="text-[13.5px] font-bold text-gray-900">Procedure Logs Breakdown</h2>
         </div>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
-              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Procedure Name</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32 print:text-black print:font-bold">Completions</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32 print:text-black print:font-bold">Target (Cohort)</th>
-              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-40 print:text-black print:font-bold">Cohort Accomplished</th>
-            </tr>
-          </thead>
-          <tbody>
-            {procedureTypes.map((type) => {
-              if (type.procedures.length === 0) return null;
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Procedure Name</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32 print:text-black print:font-bold">Completions</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-32 print:text-black print:font-bold">Target (Cohort)</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 w-40 print:text-black print:font-bold">Cohort Accomplished</th>
+              </tr>
+            </thead>
+            <tbody>
+              {procedureTypes.map((type) => {
+                if (type.procedures.length === 0) return null;
 
-              return (
-                <React.Fragment key={type.id}>
-                  {/* Category Header Row */}
-                  <tr className="bg-gray-50/70 border-y border-gray-200/60 print:bg-gray-200 print:border-y print:border-black print:break-inside-avoid">
-                    <td colSpan={4} className="px-4 py-2.5 font-bold text-brand-red text-[13.5px] print:text-black">
-                      📂 {type.name} Procedures
-                    </td>
-                  </tr>
-                  {type.procedures.map((p) => {
-                    const completed = logCounts.get(p.id) ?? 0;
-                    const completionRate = Math.min(Math.round((completed / totalTarget) * 100), 100);
+                return (
+                  <React.Fragment key={type.id}>
+                    {/* Category Header Row */}
+                    <tr className="bg-gray-50/70 border-y border-gray-200/60 print:bg-gray-200 print:border-y print:border-black print:break-inside-avoid">
+                      <td colSpan={4} className="px-4 py-2.5 font-bold text-brand-red text-[13.5px] print:text-black">
+                        📂 {type.name} Procedures
+                      </td>
+                    </tr>
+                    {type.procedures.map((p) => {
+                      const completed = logCounts.get(p.id) ?? 0;
+                      const completionRate = Math.min(Math.round((completed / totalTarget) * 100), 100);
 
-                    let rateColor = "text-red-600";
-                    if (completionRate >= 80) {
-                      rateColor = "text-green-700 print:text-black";
-                    } else if (completionRate >= 50) {
-                      rateColor = "text-amber-600 print:text-black";
-                    }
+                      let rateColor = "text-red-600";
+                      if (completionRate >= 80) {
+                        rateColor = "text-green-700 print:text-black";
+                      } else if (completionRate >= 50) {
+                        rateColor = "text-amber-600 print:text-black";
+                      }
 
-                    return (
-                      <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
-                        <td className="px-5 py-2.5 text-[13px] text-gray-700 print:text-black">{p.name}</td>
-                        <td className="px-4 py-2.5 text-[13px] font-semibold text-gray-900 text-center print:text-black">{completed}</td>
-                        <td className="px-4 py-2.5 text-[13px] text-gray-400 text-center print:text-black">{totalTarget}</td>
-                        <td className="px-4 py-2.5 text-[13px] text-right">
-                          <span className={`font-semibold ${rateColor}`}>
-                            {completed}/{totalTarget} ({completionRate}%)
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </React.Fragment>
-              );
-            })}
-          </tbody>
-        </table>
+                      return (
+                        <tr key={p.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
+                          <td className="px-5 py-2.5 text-[13px] text-gray-700 print:text-black">{p.name}</td>
+                          <td className="px-4 py-2.5 text-[13px] font-semibold text-gray-900 text-center print:text-black">{completed}</td>
+                          <td className="px-4 py-2.5 text-[13px] text-gray-400 text-center print:text-black">{totalTarget}</td>
+                          <td className="px-4 py-2.5 text-[13px] text-right">
+                            <span className={`font-semibold ${rateColor}`}>
+                              {completed}/{totalTarget} ({completionRate}%)
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

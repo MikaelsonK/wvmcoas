@@ -1,8 +1,9 @@
 import { requireRole } from "@/lib/requireRole";
 import { prisma } from "@/lib/prisma";
-import { CreateCategoryForm } from "@/components/CreateCategoryForm";
-import { CreateProcedureForm } from "@/components/CreateProcedureForm";
+import { CreateCategoryModalTrigger } from "@/components/CreateCategoryForm";
+import { CreateProcedureModalTrigger } from "@/components/CreateProcedureForm";
 import { deleteCategory, deleteProcedure } from "./actions";
+import { SearchBar } from "@/components/SearchBar";
 
 export default async function AdminProceduresPage({
   searchParams,
@@ -40,42 +41,23 @@ export default async function AdminProceduresPage({
   type ProcRow = TypeRow["procedures"][number];
 
   return (
-    <div className="p-6">
-      <div className="mb-5">
-        <h1 className="text-lg font-bold text-gray-900">Procedures Config</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Define procedure categories and individual procedures.</p>
+    <div className="p-4 sm:p-6">
+      <div className="mb-5 flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-lg font-bold text-gray-900">Procedures Config</h1>
+          <p className="text-sm text-gray-400 mt-0.5">Define procedure categories and individual procedures.</p>
+        </div>
+        <div className="flex gap-2">
+          <CreateCategoryModalTrigger />
+          <CreateProcedureModalTrigger categories={allCategories} />
+        </div>
       </div>
 
-      <div className="flex gap-5 items-start flex-wrap">
-
-        {/* Forms column */}
-        <div className="w-72 shrink-0 flex flex-col gap-4">
-
-          {/* Create Category */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="text-[13.5px] font-bold text-gray-900 mb-4">Create Category</h2>
-            <CreateCategoryForm />
-          </div>
-
-          {/* Create Procedure */}
-          <div className="bg-white border border-gray-200 rounded-xl p-5">
-            <h2 className="text-[13.5px] font-bold text-gray-900 mb-4">Create Procedure</h2>
-            <CreateProcedureForm categories={allCategories} />
-          </div>
-        </div>
-
-        {/* List */}
-        <div className="flex-1 min-w-[320px] bg-white border border-gray-200 rounded-xl overflow-hidden">
+      {/* List */}
+      <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden">
           <div className="px-5 py-3.5 border-b border-gray-100 flex items-center justify-between gap-3">
             <h2 className="text-[13.5px] font-bold text-gray-900 shrink-0">Categories & Procedures</h2>
-            <form className="flex-1 max-w-[240px]">
-              <input
-                name="q"
-                defaultValue={q}
-                placeholder="Search categories or procedures…"
-                className="w-full px-3 py-1.5 text-[12.5px] text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 placeholder:text-gray-400"
-              />
-            </form>
+            <SearchBar placeholder="Search categories or procedures…" defaultValue={q} />
           </div>
           {procedureTypes.length === 0 ? (
             <p className="px-5 py-6 text-sm text-gray-400">
@@ -120,8 +102,6 @@ export default async function AdminProceduresPage({
             </div>
           )}
         </div>
-
       </div>
-    </div>
   );
 }

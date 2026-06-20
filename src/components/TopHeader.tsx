@@ -2,7 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { Button } from "react-aria-components";
-import { LogOut } from "lucide-react";
+import { LogOut, Menu } from "lucide-react";
 
 interface TopHeaderProps {
   user: {
@@ -10,6 +10,7 @@ interface TopHeaderProps {
     email?: string | null;
     role?: string | null;
   };
+  onMenuClick?: () => void;
 }
 
 const roleLabel: Record<string, string> = {
@@ -18,18 +19,27 @@ const roleLabel: Record<string, string> = {
   RESIDENT:  "Resident",
 };
 
-export function TopHeader({ user }: TopHeaderProps) {
+export function TopHeader({ user, onMenuClick }: TopHeaderProps) {
   const initials = user.name
     ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
   return (
-    <header className="h-14 flex items-center justify-between px-5 bg-white border-b border-gray-200 shrink-0">
+    <header className="h-14 flex items-center justify-between px-4 md:px-5 bg-white border-b border-gray-200 shrink-0">
 
       {/* Left: title */}
-      <span className="text-[13.5px] font-semibold text-gray-700 tracking-tight">
-        Online Assessment System
-      </span>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onMenuClick}
+          className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-colors md:hidden outline-none cursor-pointer flex items-center justify-center"
+          aria-label="Open menu"
+        >
+          <Menu size={18} />
+        </button>
+        <span className="text-[13.5px] font-semibold text-gray-700 tracking-tight">
+          Online Assessment System
+        </span>
+      </div>
 
       {/* Right: user + logout */}
       <div className="flex items-center gap-3">

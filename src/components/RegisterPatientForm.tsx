@@ -1,15 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Form, TextField, Label, Input, Button, FieldError, Select, SelectValue, Popover, ListBox, ListBoxItem } from "react-aria-components";
 import { registerPatient, FormState } from "@/app/admin/patients/actions";
+import { DialogModal } from "@/components/DialogModal";
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 placeholder:text-gray-400 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10";
 const labelClass = "text-[12.5px] font-semibold text-gray-600";
 const errorClass = "text-xs text-red-600 mt-1 block font-medium";
 
-export function RegisterPatientForm() {
+export function RegisterPatientForm({ onSuccess }: { onSuccess?: () => void }) {
   const [state, action, isPending] = useActionState(registerPatient, {} as FormState);
+
+  useEffect(() => {
+    if (state.success && onSuccess) {
+      const timer = setTimeout(() => {
+        onSuccess();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.success, onSuccess]);
 
   return (
     <Form action={action} validationErrors={state.errors} className="flex flex-col gap-3">
@@ -45,19 +55,19 @@ export function RegisterPatientForm() {
 
         <Select isRequired name="gender" className="flex-1 flex flex-col gap-1.5">
           <Label className={labelClass}>Gender</Label>
-          <Button className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-default text-left data-[hovered]:bg-gray-100/50">
+          <Button className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-pointer text-left data-[hovered]:bg-gray-100/50">
             <SelectValue className="block truncate data-[placeholder]:text-gray-400" />
             <span aria-hidden="true" className="text-gray-400 text-xs">▼</span>
           </Button>
           <Popover className="w-[var(--trigger-width)] max-h-60 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg focus:outline-none z-50">
             <ListBox className="p-1 focus:outline-none">
-              <ListBoxItem id="Male" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+              <ListBoxItem id="Male" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
                 Male
               </ListBoxItem>
-              <ListBoxItem id="Female" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+              <ListBoxItem id="Female" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
                 Female
               </ListBoxItem>
-              <ListBoxItem id="Other" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+              <ListBoxItem id="Other" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
                 Other
               </ListBoxItem>
             </ListBox>
@@ -68,25 +78,25 @@ export function RegisterPatientForm() {
 
       <Select name="civilStatus" className="flex flex-col gap-1.5">
         <Label className={labelClass}>Civil Status</Label>
-        <Button className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-default text-left data-[hovered]:bg-gray-100/50">
+        <Button className="w-full flex items-center justify-between px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-pointer text-left data-[hovered]:bg-gray-100/50">
           <SelectValue className="block truncate data-[placeholder]:text-gray-400" />
           <span aria-hidden="true" className="text-gray-400 text-xs">▼</span>
         </Button>
         <Popover className="w-[var(--trigger-width)] max-h-60 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg focus:outline-none z-50">
           <ListBox className="p-1 focus:outline-none">
-            <ListBoxItem id="" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+            <ListBoxItem id="" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
               Select…
             </ListBoxItem>
-            <ListBoxItem id="Single" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+            <ListBoxItem id="Single" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
               Single
             </ListBoxItem>
-            <ListBoxItem id="Married" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+            <ListBoxItem id="Married" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
               Married
             </ListBoxItem>
-            <ListBoxItem id="Separated" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+            <ListBoxItem id="Separated" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
               Separated
             </ListBoxItem>
-            <ListBoxItem id="Widowed" className="cursor-default rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
+            <ListBoxItem id="Widowed" className="cursor-pointer rounded px-2.5 py-2 text-sm outline-none data-[focused]:bg-gray-100 data-[selected]:bg-brand-red data-[selected]:text-white text-gray-800 transition-colors duration-100">
               Widowed
             </ListBoxItem>
           </ListBox>
@@ -103,10 +113,29 @@ export function RegisterPatientForm() {
       <Button
         type="submit"
         isDisabled={isPending}
-        className="mt-1 w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] disabled:opacity-50 transition-colors duration-150 cursor-default"
+        className="mt-1 w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] disabled:opacity-50 transition-colors duration-150 cursor-pointer outline-none"
       >
         {isPending ? "Registering…" : "Register Patient"}
       </Button>
     </Form>
+  );
+}
+
+export function RegisterPatientModalTrigger() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        onPress={() => setIsOpen(true)}
+        className="px-4 py-2 text-[12.5px] font-semibold text-white bg-brand-red rounded-lg hover:bg-[#8a0606] transition-colors outline-none cursor-pointer flex items-center justify-center"
+      >
+        + Register Patient
+      </Button>
+
+      <DialogModal isOpen={isOpen} onOpenChange={setIsOpen} title="Register New Patient">
+        <RegisterPatientForm onSuccess={() => setIsOpen(false)} />
+      </DialogModal>
+    </>
   );
 }

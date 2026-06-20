@@ -1,15 +1,25 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import { Form, TextField, Label, Input, Button, FieldError } from "react-aria-components";
 import { registerEvaluator, FormState } from "@/app/admin/evaluators/actions";
+import { DialogModal } from "@/components/DialogModal";
 
 const inputClass = "w-full px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none transition-all duration-150 placeholder:text-gray-400 focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10";
 const labelClass = "text-[12.5px] font-semibold text-gray-600";
 const errorClass = "text-xs text-red-600 mt-1 block font-medium";
 
-export function RegisterEvaluatorForm() {
+export function RegisterEvaluatorForm({ onSuccess }: { onSuccess?: () => void }) {
   const [state, action, isPending] = useActionState(registerEvaluator, {} as FormState);
+
+  useEffect(() => {
+    if (state.success && onSuccess) {
+      const timer = setTimeout(() => {
+        onSuccess();
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [state.success, onSuccess]);
 
   return (
     <Form action={action} validationErrors={state.errors} className="flex flex-col gap-3">
@@ -26,19 +36,19 @@ export function RegisterEvaluatorForm() {
 
       <TextField isRequired name="name" className="flex flex-col gap-1.5">
         <Label className={labelClass}>Full Name</Label>
-        <Input className={inputClass} placeholder="e.g. Dr. Arthur Pendragon" />
+        <Input className={inputClass} placeholder="Dr. Arthur Pendragon" />
         <FieldError className={errorClass} />
       </TextField>
 
       <TextField isRequired type="email" name="email" className="flex flex-col gap-1.5">
         <Label className={labelClass}>Email Address</Label>
-        <Input className={inputClass} placeholder="e.g. arthur@hospital.com" />
+        <Input className={inputClass} placeholder="arthur@hospital.com" />
         <FieldError className={errorClass} />
       </TextField>
 
       <TextField name="contactNo" className="flex flex-col gap-1.5">
         <Label className={labelClass}>Contact Number (Optional)</Label>
-        <Input className={inputClass} placeholder="e.g. +639171234567" />
+        <Input className={inputClass} placeholder="+639171234567" />
         <FieldError className={errorClass} />
       </TextField>
 
@@ -51,10 +61,29 @@ export function RegisterEvaluatorForm() {
       <Button
         type="submit"
         isDisabled={isPending}
-        className="mt-1 w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] disabled:opacity-50 transition-colors duration-150 cursor-default"
+        className="mt-1 w-full py-2.5 rounded-lg text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] disabled:opacity-50 transition-colors duration-150 cursor-pointer outline-none"
       >
         {isPending ? "Registering…" : "Add Evaluator"}
       </Button>
     </Form>
+  );
+}
+
+export function RegisterEvaluatorModalTrigger() {
+  const [isOpen, setIsOpen] = useState(false);
+
+  return (
+    <>
+      <Button
+        onPress={() => setIsOpen(true)}
+        className="px-4 py-2 text-[12.5px] font-semibold text-white bg-brand-red rounded-lg hover:bg-[#8a0606] transition-colors outline-none cursor-pointer flex items-center justify-center"
+      >
+        + Add Evaluator
+      </Button>
+
+      <DialogModal isOpen={isOpen} onOpenChange={setIsOpen} title="Register Evaluator">
+        <RegisterEvaluatorForm onSuccess={() => setIsOpen(false)} />
+      </DialogModal>
+    </>
   );
 }

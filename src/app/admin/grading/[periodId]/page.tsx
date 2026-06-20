@@ -206,7 +206,7 @@ export default async function GradingSheetPage({
   const competenceAvg = hasRows ? Math.round(filteredRows.reduce((sum, r) => sum + r.scores.competence.pct, 0) / filteredRows.length) : 0;
 
   return (
-    <div className="p-6 print:p-0 print:bg-white print:text-black">
+    <div className="p-4 sm:p-6 print:p-0 print:bg-white print:text-black">
       <div className="flex gap-4 flex-wrap items-center justify-between border-b border-gray-200 pb-5 mb-5 print:border-none print:pb-0">
         <div>
           <h1 className="text-lg font-bold text-gray-900 print:text-xl print:font-bold">Grading Sheet & Analytics</h1>
@@ -290,69 +290,71 @@ export default async function GradingSheetPage({
         <div className="px-5 py-4 border-b border-gray-100 print:hidden">
           <h2 className="text-[13.5px] font-bold text-gray-900">Detailed Resident Grading Sheet</h2>
         </div>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
-              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Resident</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Year</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Quizzes</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Long Exams</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Oral Exam</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">OSCE</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">RISE</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Clinical Comp.</th>
-              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Evaluations</th>
-              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Total Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRows.length === 0 ? (
-              <tr>
-                <td colSpan={10} className="px-5 py-6 text-sm text-gray-400 text-center">
-                  No resident records found for this Year Level.
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200 print:bg-gray-100 print:border-b print:border-black">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Resident</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Year</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Quizzes</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Long Exams</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Oral Exam</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">OSCE</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">RISE</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Clinical Comp.</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Evaluations</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3 print:text-black print:font-bold">Total Points</th>
               </tr>
-            ) : (
-              filteredRows.map((r) => (
-                <tr key={r.residentId} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
-                  <td className="px-4 py-3">
-                    <div className="text-[13px] font-semibold text-gray-900">{r.name}</div>
-                    <div className="text-[11px] text-gray-400 print:hidden">{r.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500 text-center">{r.yearLevel ?? "-"}</td>
-                  <td className="px-4 py-3 text-[13px] text-center">
-                    <strong className="text-gray-900">{r.scores.quiz.raw}</strong>{" "}
-                    <span className="text-[11px] text-gray-400">({r.scores.quiz.pct}%)</span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-center">
-                    <strong className="text-gray-900">{r.scores.longExam.raw}</strong>{" "}
-                    <span className="text-[11px] text-gray-400">({r.scores.longExam.pct}%)</span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-center">
-                    <strong className="text-gray-900">{r.scores.oralExam.raw}</strong>{" "}
-                    <span className="text-[11px] text-gray-400">({r.scores.oralExam.pct}%)</span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-center">
-                    <strong className="text-gray-900">{r.scores.osce.raw}</strong>{" "}
-                    <span className="text-[11px] text-gray-400">({r.scores.osce.pct}%)</span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-center">
-                    <strong className="text-gray-900">{r.scores.rise.raw}</strong>{" "}
-                    <span className="text-[11px] text-gray-400">({r.scores.rise.pct}%)</span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-center">
-                    <strong className="text-gray-900">{r.scores.competence.raw}</strong>{" "}
-                    <span className="text-[11px] text-gray-400">({r.scores.competence.pct}%)</span>
-                  </td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500 text-right">{r.evaluationsCount}</td>
-                  <td className="px-4 py-3 text-[13px] font-bold text-brand-red text-right print:text-black">
-                    {r.totalPoints}
+            </thead>
+            <tbody>
+              {filteredRows.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="px-5 py-6 text-sm text-gray-400 text-center">
+                    No resident records found for this Year Level.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredRows.map((r) => (
+                  <tr key={r.residentId} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors print:border-b print:border-black print:break-inside-avoid">
+                    <td className="px-4 py-3">
+                      <div className="text-[13px] font-semibold text-gray-900">{r.name}</div>
+                      <div className="text-[11px] text-gray-400 print:hidden">{r.email}</div>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-gray-500 text-center">{r.yearLevel ?? "-"}</td>
+                    <td className="px-4 py-3 text-[13px] text-center">
+                      <strong className="text-gray-900">{r.scores.quiz.raw}</strong>{" "}
+                      <span className="text-[11px] text-gray-400">({r.scores.quiz.pct}%)</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-center">
+                      <strong className="text-gray-900">{r.scores.longExam.raw}</strong>{" "}
+                      <span className="text-[11px] text-gray-400">({r.scores.longExam.pct}%)</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-center">
+                      <strong className="text-gray-900">{r.scores.oralExam.raw}</strong>{" "}
+                      <span className="text-[11px] text-gray-400">({r.scores.oralExam.pct}%)</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-center">
+                      <strong className="text-gray-900">{r.scores.osce.raw}</strong>{" "}
+                      <span className="text-[11px] text-gray-400">({r.scores.osce.pct}%)</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-center">
+                      <strong className="text-gray-900">{r.scores.rise.raw}</strong>{" "}
+                      <span className="text-[11px] text-gray-400">({r.scores.rise.pct}%)</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-center">
+                      <strong className="text-gray-900">{r.scores.competence.raw}</strong>{" "}
+                      <span className="text-[11px] text-gray-400">({r.scores.competence.pct}%)</span>
+                    </td>
+                    <td className="px-4 py-3 text-[13px] text-gray-500 text-right">{r.evaluationsCount}</td>
+                    <td className="px-4 py-3 text-[13px] font-bold text-brand-red text-right print:text-black">
+                      {r.totalPoints}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Evaluations List Section (no-print) */}
@@ -360,57 +362,59 @@ export default async function GradingSheetPage({
         <div className="px-5 py-4 border-b border-gray-100">
           <h2 className="text-[13.5px] font-bold text-gray-900">Submitted Evaluations Log</h2>
         </div>
-        <table className="w-full border-collapse">
-          <thead>
-            <tr className="bg-gray-50 border-b border-gray-200">
-              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Resident</th>
-              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Evaluator</th>
-              <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Form</th>
-              <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Status</th>
-              <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {evaluations.length === 0 ? (
-              <tr>
-                <td colSpan={5} className="px-5 py-6 text-sm text-gray-400 text-center">
-                  No evaluations submitted yet.
-                </td>
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse">
+            <thead>
+              <tr className="bg-gray-50 border-b border-gray-200">
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Resident</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Evaluator</th>
+                <th className="text-left text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Form</th>
+                <th className="text-center text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Status</th>
+                <th className="text-right text-[11px] font-semibold text-gray-500 uppercase tracking-wide px-4 py-3">Actions</th>
               </tr>
-            ) : (
-              evaluations.map((e) => (
-                <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-[13px] font-medium text-gray-900">{e.resident.name}</td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500">{e.evaluator.name}</td>
-                  <td className="px-4 py-3 text-[13px] text-gray-500">{e.form.title}</td>
-                  <td className="px-4 py-3 text-center">
-                    <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
-                      e.status === "SUBMITTED"
-                        ? "bg-green-50 text-green-700 border border-green-200"
-                        : "bg-red-50 text-red-700 border border-red-200"
-                    }`}>
-                      {e.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    {e.status === "SUBMITTED" ? (
-                      <form action={revertEvaluation.bind(null, e.id, periodId)} className="inline">
-                        <button
-                          type="submit"
-                          className="text-[11px] font-medium text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-2.5 py-1 rounded transition-colors"
-                        >
-                          Revert to Draft
-                        </button>
-                      </form>
-                    ) : (
-                      <span className="text-xs text-gray-400">No actions</span>
-                    )}
+            </thead>
+            <tbody>
+              {evaluations.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="px-5 py-6 text-sm text-gray-400 text-center">
+                    No evaluations submitted yet.
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                evaluations.map((e) => (
+                  <tr key={e.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-[13px] font-medium text-gray-900">{e.resident.name}</td>
+                    <td className="px-4 py-3 text-[13px] text-gray-500">{e.evaluator.name}</td>
+                    <td className="px-4 py-3 text-[13px] text-gray-500">{e.form.title}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className={`inline-flex px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        e.status === "SUBMITTED"
+                          ? "bg-green-50 text-green-700 border border-green-200"
+                          : "bg-red-50 text-red-700 border border-red-200"
+                      }`}>
+                        {e.status}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      {e.status === "SUBMITTED" ? (
+                        <form action={revertEvaluation.bind(null, e.id, periodId)} className="inline">
+                          <button
+                            type="submit"
+                            className="text-[11px] font-medium text-gray-600 hover:text-gray-900 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-2.5 py-1 rounded transition-colors"
+                          >
+                            Revert to Draft
+                          </button>
+                        </form>
+                      ) : (
+                        <span className="text-xs text-gray-400">No actions</span>
+                      )}
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );
