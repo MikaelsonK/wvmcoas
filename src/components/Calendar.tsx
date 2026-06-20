@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useActionState, useEffect, useRef } from "react";
+import { createCalendarEvent, FormState } from "@/app/resident/actions";
 
 export interface CalendarEvent {
   id: string;
@@ -23,6 +24,19 @@ export function Calendar({ events }: CalendarProps) {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [isAddEventOpen, setIsAddEventOpen] = useState(false);
+  
+  const formRef = useRef<HTMLFormElement>(null);
+  const [state, formAction, isPending] = useActionState(createCalendarEvent, {} as FormState);
+
+  useEffect(() => {
+    if (state?.success) {
+      const timer = setTimeout(() => {
+        setIsAddEventOpen(false);
+        formRef.current?.reset();
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+  }, [state]);
   const [eventColors, setEventColors] = useState<Record<string, string>>(() => {
     if (typeof window !== "undefined") {
       const saved = localStorage.getItem("oas_event_colors");
@@ -253,7 +267,12 @@ export function Calendar({ events }: CalendarProps) {
           >
             <h3 style={{ margin: "0 0 16px 0", color: "var(--brand-red)" }}>Add Calendar Event</h3>
             
-            <form method="POST" action="/api/resident/events">
+            <form ref={formRef} action={formAction}>
+              {state?.message && (
+                <div role="alert" className="mb-4 px-3.5 py-2.5 rounded-lg bg-red-50 border border-red-200 text-red-600 text-[13px]">
+                  {state.message}
+                </div>
+              )}
               <div className="form-group">
                 <label className="form-label" htmlFor="evt-title">Event Title</label>
                 <input id="evt-title" name="title" className="input-field" placeholder="e.g. RISE Exam Session" required />
@@ -303,8 +322,8 @@ export function Calendar({ events }: CalendarProps) {
                 <button type="button" className="button-secondary" onClick={() => setIsAddEventOpen(false)}>
                   Cancel
                 </button>
-                <button type="submit" className="button-primary">
-                  Save Event
+                <button type="submit" className="button-primary" disabled={isPending}>
+                  {isPending ? "Saving..." : "Save Event"}
                 </button>
               </div>
             </form>
