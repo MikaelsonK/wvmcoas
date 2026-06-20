@@ -53,6 +53,68 @@ export function CurriculumHubClient({
   const [hoveredNode, setHoveredNode] = useState<{ type: "domain" | "procedure" | "form"; id: string } | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  const [draggingLink, setDraggingLink] = useState<{
+    sourceType: "domain" | "procedure" | "form";
+    sourceId: string;
+    startX: number;
+    startY: number;
+  } | null>(null);
+  const [dragCoords, setDragCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dropTarget, setDropTarget] = useState<{ type: "domain" | "procedure" | "form"; id: string } | null>(null);
+
+  const handleMouseDown = (
+    e: React.MouseEvent,
+    sourceType: "domain" | "procedure" | "form",
+    sourceId: string,
+    startX: number,
+    startY: number
+  ) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setDraggingLink({ sourceType, sourceId, startX, startY });
+    setDragCoords({ x: startX, y: startY });
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (!draggingLink) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 800;
+    const y = ((e.clientY - rect.top) / rect.height) * 520;
+    setDragCoords({ x, y });
+  };
+
+  const handleMouseUp = () => {
+    if (!draggingLink) return;
+
+    if (dropTarget) {
+      const { sourceType, sourceId } = draggingLink;
+      const { type: targetType, id: targetId } = dropTarget;
+
+      if (sourceType === "procedure" && targetType === "domain") {
+        startTransition(async () => {
+          await updateProcedureDomain(sourceId, targetId);
+        });
+      } else if (sourceType === "form" && targetType === "domain") {
+        const form = forms.find((f) => f.id === sourceId);
+        if (form) {
+          startTransition(async () => {
+            await updateFormMappings(sourceId, targetId, form.procedureId);
+          });
+        }
+      } else if (sourceType === "form" && targetType === "procedure") {
+        const form = forms.find((f) => f.id === sourceId);
+        if (form) {
+          startTransition(async () => {
+            await updateFormMappings(sourceId, form.domainId, targetId);
+          });
+        }
+      }
+    }
+
+    setDraggingLink(null);
+    setDropTarget(null);
+  };
+
   // Helper: Find all descendant domain IDs
   const getDescendantIds = (domainId: string): string[] => {
     const list: string[] = [domainId];
@@ -473,19 +535,41 @@ export function CurriculumHubClient({
       )}
 
       {activeTab === "graph" && (
-        <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm p-4 relative">
-          <h3 className="text-sm font-bold text-gray-900 mb-1">Visual Curriculum Map</h3>
-          <p className="text-[11.5px] text-gray-400 mb-6">
-            Hover over any circle node to highlight the competency relationships and evaluation loops.
-          </p>
+        <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm p-4 relative select-none">
+          <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
+            <div>
+              <h3 className="text-sm font-bold text-gray-900">Visual Curriculum Map</h3>
+              <p className="text-[11.5px] text-gray-400">
+                Drag from any <span className="font-semibold text-gray-700">source anchor dot (left of circles)</span> and drop it onto a target node to live-update mapping relationships.
+              </p>
+            </div>
+            {draggingLink && (
+              <span className="text-[10px] font-bold text-brand-red bg-brand-red/5 px-2 py-0.5 rounded border border-brand-red/25 animate-pulse">
+                🔗 DRAGGING CONNECTION...
+              </span>
+            )}
+          </div>
 
           <div className="overflow-x-auto">
             <svg
-              className="mx-auto min-w-[700px] w-full h-[520px]"
+              className="mx-auto min-w-[700px] w-full h-[520px] outline-none"
               viewBox="0 0 800 520"
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
             >
               {/* DEFINITIONS FOR SVG GRADIENTS AND FILTERS */}
               <defs>
+                <style>{`
+                  @keyframes dash {
+                    to {
+                      stroke-dashoffset: -20;
+                    }
+                  }
+                  .animate-dash {
+                    stroke-dasharray: 6, 4;
+                    animation: dash 1s linear infinite;
+                  }
+                `}</style>
                 <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
                   <feGaussianBlur stdDeviation="3" result="blur" />
                   <feComposite in="SourceGraphic" in2="blur" operator="over" />
@@ -590,6 +674,17 @@ export function CurriculumHubClient({
                 );
               })}
 
+              {/* DYNAMIC DRAGGING LINK DRAWING */}
+              {draggingLink && (
+                <path
+                  d={`M ${draggingLink.startX} ${draggingLink.startY} C ${(draggingLink.startX + dragCoords.x) / 2} ${draggingLink.startY}, ${(draggingLink.startX + dragCoords.x) / 2} ${dragCoords.y}, ${dragCoords.x} ${dragCoords.y}`}
+                  fill="none"
+                  stroke={draggingLink.sourceType === "form" ? "#cd9804" : "#a00707"}
+                  strokeWidth="2.5"
+                  className="animate-dash"
+                />
+              )}
+
               {/* DOMAIN NODES (COLUMN 1) */}
               <g>
                 <text x="150" y="25" textAnchor="middle" className="text-[11px] font-extrabold fill-gray-400 uppercase tracking-widest">
@@ -599,23 +694,35 @@ export function CurriculumHubClient({
                   const active = isConnected("domain", dom.id);
                   const isHovered = hoveredNode?.type === "domain" && hoveredNode.id === dom.id;
                   const cy = 80 + idx * 110;
+                  const isValidTarget = draggingLink && (draggingLink.sourceType === "procedure" || draggingLink.sourceType === "form");
+                  const isTargeted = dropTarget?.type === "domain" && dropTarget.id === dom.id;
 
                   return (
                     <g
                       key={dom.id}
                       className="cursor-pointer group"
-                      onMouseEnter={() => setHoveredNode({ type: "domain", id: dom.id })}
-                      onMouseLeave={() => setHoveredNode(null)}
+                      onMouseEnter={() => {
+                        setHoveredNode({ type: "domain", id: dom.id });
+                        if (isValidTarget) {
+                          setDropTarget({ type: "domain", id: dom.id });
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredNode(null);
+                        if (isValidTarget) {
+                          setDropTarget(null);
+                        }
+                      }}
                     >
                       <circle
                         cx="150"
                         cy={cy}
-                        r={isHovered ? "28" : "24"}
+                        r={isTargeted ? "30" : isHovered ? "28" : "24"}
                         fill="#a00707"
                         fillOpacity={active ? 1 : 0.2}
-                        stroke="#fff"
-                        strokeWidth="3.5"
-                        filter={isHovered ? "url(#glow-red)" : ""}
+                        stroke={isTargeted ? "#cd9804" : "#fff"}
+                        strokeWidth={isTargeted ? "4" : "3.5"}
+                        filter={isHovered || isTargeted ? "url(#glow-red)" : ""}
                         className="transition-all duration-300"
                       />
                       <text
@@ -629,10 +736,10 @@ export function CurriculumHubClient({
                       </text>
                       <text
                         x="135"
-                        y={cy + 40}
+                        y={cy + 4}
                         textAnchor="end"
                         fill={active ? "#111827" : "#9ca3af"}
-                        className={`text-[11px] font-bold transition-colors select-none ${isHovered ? "fill-brand-red font-extrabold" : ""}`}
+                        className={`text-[11px] font-bold transition-colors select-none ${isHovered || isTargeted ? "fill-brand-red font-extrabold" : ""}`}
                       >
                         {dom.name}
                       </text>
@@ -650,22 +757,34 @@ export function CurriculumHubClient({
                   const active = isConnected("procedure", proc.id);
                   const isHovered = hoveredNode?.type === "procedure" && hoveredNode.id === proc.id;
                   const cy = 50 + idx * 50;
+                  const isValidTarget = draggingLink && draggingLink.sourceType === "form";
+                  const isTargeted = dropTarget?.type === "procedure" && dropTarget.id === proc.id;
 
                   return (
                     <g
                       key={proc.id}
                       className="cursor-pointer"
-                      onMouseEnter={() => setHoveredNode({ type: "procedure", id: proc.id })}
-                      onMouseLeave={() => setHoveredNode(null)}
+                      onMouseEnter={() => {
+                        setHoveredNode({ type: "procedure", id: proc.id });
+                        if (isValidTarget) {
+                          setDropTarget({ type: "procedure", id: proc.id });
+                        }
+                      }}
+                      onMouseLeave={() => {
+                        setHoveredNode(null);
+                        if (isValidTarget) {
+                          setDropTarget(null);
+                        }
+                      }}
                     >
                       <circle
                         cx="400"
                         cy={cy}
-                        r={isHovered ? "15" : "11"}
+                        r={isTargeted ? "17" : isHovered ? "15" : "11"}
                         fill="#96bfa4"
                         fillOpacity={active ? 1 : 0.15}
-                        stroke="#fff"
-                        strokeWidth="2.5"
+                        stroke={isTargeted ? "#cd9804" : "#fff"}
+                        strokeWidth={isTargeted ? "3.5" : "2.5"}
                         className="transition-all duration-300"
                       />
                       <text
@@ -673,10 +792,24 @@ export function CurriculumHubClient({
                         y={cy + 4}
                         textAnchor="end"
                         fill={active ? "#374151" : "#9ca3af"}
-                        className={`text-[10.5px] font-semibold transition-colors select-none ${isHovered ? "fill-green-800 font-extrabold" : ""}`}
+                        className={`text-[10.5px] font-semibold transition-colors select-none ${isHovered || isTargeted ? "fill-green-800 font-extrabold" : ""}`}
                       >
                         {proc.name.length > 32 ? proc.name.slice(0, 32) + "…" : proc.name}
                       </text>
+
+                      {/* DRAG HANDLE FOR PROCEDURE (to connect to Domain) */}
+                      {isHovered && !draggingLink && (
+                        <circle
+                          cx="385"
+                          cy={cy}
+                          r="5.5"
+                          fill="#a00707"
+                          className="cursor-crosshair fill-red-600 hover:fill-red-800 transition-all duration-150 active:scale-125"
+                          onMouseDown={(e) => handleMouseDown(e, "procedure", proc.id, 385, cy)}
+                        >
+                          <title>Drag to connect to a Domain</title>
+                        </circle>
+                      )}
                     </g>
                   );
                 })}
@@ -719,6 +852,20 @@ export function CurriculumHubClient({
                       >
                         {form.title.length > 25 ? form.title.slice(0, 25) + "…" : form.title}
                       </text>
+
+                      {/* DRAG HANDLE FOR FORM (to connect to Domain or Procedure) */}
+                      {isHovered && !draggingLink && (
+                        <circle
+                          cx="635"
+                          cy={cy}
+                          r="5.5"
+                          fill="#cd9804"
+                          className="cursor-crosshair fill-amber-500 hover:fill-amber-600 transition-all duration-150 active:scale-125"
+                          onMouseDown={(e) => handleMouseDown(e, "form", form.id, 635, cy)}
+                        >
+                          <title>Drag to connect to a Domain or Procedure</title>
+                        </circle>
+                      )}
                     </g>
                   );
                 })}
