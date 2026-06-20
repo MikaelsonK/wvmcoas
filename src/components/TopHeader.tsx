@@ -1,6 +1,8 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { Button } from "react-aria-components";
+import { LogOut } from "lucide-react";
 
 interface TopHeaderProps {
   user: {
@@ -10,78 +12,49 @@ interface TopHeaderProps {
   };
 }
 
-export function TopHeader({ user }: TopHeaderProps) {
-  return (
-    <header
-      style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        padding: "16px 24px",
-        backgroundColor: "var(--bg-primary)",
-        borderBottom: "3px solid var(--brand-gold)",
-        boxShadow: "0 4px 6px -1px rgba(0,0,0,0.05)",
-        zIndex: 50,
-      }}
-    >
-      {/* Logo */}
-      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div
-          style={{
-            width: 32,
-            height: 32,
-            borderRadius: "50%",
-            backgroundColor: "var(--brand-red)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            color: "white",
-            fontWeight: "bold",
-            fontSize: 16,
-          }}
-        >
-          O
-        </div>
-        <span style={{ fontSize: 18, fontWeight: "bold", color: "var(--text)" }}>
-          Online Assessment System (OAS)
-        </span>
-      </div>
+const roleLabel: Record<string, string> = {
+  ADMIN:     "Administrator",
+  EVALUATOR: "Evaluator",
+  RESIDENT:  "Resident",
+};
 
-      {/* User Actions */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: 13 }}>
-          <strong style={{ color: "var(--text)" }}>{user.name || "User"}</strong>
-          <span style={{ color: "var(--brand-red)", fontWeight: "500", fontSize: 11 }}>
-            {user.role}
+export function TopHeader({ user }: TopHeaderProps) {
+  const initials = user.name
+    ? user.name.split(" ").map(n => n[0]).join("").toUpperCase().slice(0, 2)
+    : "U";
+
+  return (
+    <header className="h-14 flex items-center justify-between px-5 bg-white border-b border-gray-200 shrink-0">
+
+      {/* Left: title */}
+      <span className="text-[13.5px] font-semibold text-gray-700 tracking-tight">
+        Online Assessment System
+      </span>
+
+      {/* Right: user + logout */}
+      <div className="flex items-center gap-3">
+
+        {/* User info */}
+        <div className="flex flex-col items-end leading-tight">
+          <span className="text-[12.5px] font-semibold text-gray-800">{user.name || user.email || "User"}</span>
+          <span className="text-[11px] text-brand-red font-medium">
+            {roleLabel[user.role ?? ""] ?? user.role}
           </span>
         </div>
-        
-        {/* Avatar badge */}
-        <div
-          style={{
-            width: 38,
-            height: 38,
-            borderRadius: "50%",
-            backgroundColor: "var(--bg-secondary)",
-            border: "1px solid var(--border)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            color: "var(--muted)",
-            fontSize: 14,
-            fontWeight: "bold"
-          }}
-        >
-          {user.name ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2) : "U"}
+
+        {/* Avatar */}
+        <div className="w-8 h-8 rounded-full bg-brand-red/10 border border-brand-red/20 flex items-center justify-center text-brand-red text-[12px] font-bold flex-shrink-0">
+          {initials}
         </div>
 
-        <button
-          className="button-secondary"
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          style={{ padding: "6px 12px", fontSize: 12 }}
+        {/* Logout */}
+        <Button
+          onPress={() => signOut({ callbackUrl: "/login" })}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-[12px] font-medium text-gray-500 border border-gray-200 rounded-lg bg-white hover:bg-gray-50 hover:text-gray-700 transition-colors duration-150 outline-none cursor-pointer"
         >
+          <LogOut size={13} />
           Logout
-        </button>
+        </Button>
       </div>
     </header>
   );

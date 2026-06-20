@@ -2,163 +2,109 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { 
-  LayoutDashboard, 
-  ClipboardList, 
-  TrendingUp, 
-  Users, 
-  UserCheck, 
-  Activity, 
-  Award, 
-  FileText, 
-  FileSpreadsheet, 
-  Network, 
-  Settings 
+import {
+  LayoutDashboard,
+  ClipboardList,
+  TrendingUp,
+  Users,
+  UserCheck,
+  Activity,
+  Award,
+  FileText,
+  FileSpreadsheet,
+  Network,
+  Settings,
 } from "lucide-react";
 
 interface SidebarProps {
   role: string;
 }
 
-export function Sidebar({ role }: SidebarProps) {
+interface NavItem {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+}
+
+function NavLink({ href, label, icon }: NavItem) {
   const pathname = usePathname();
+  const active = pathname === href;
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-colors duration-150 ${
+        active
+          ? "bg-brand-red/8 text-brand-red font-semibold"
+          : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+      }`}
+    >
+      <span className={active ? "text-brand-red" : "text-gray-400"}>{icon}</span>
+      {label}
+    </Link>
+  );
+}
 
-  const isLinkActive = (path: string) => {
-    return pathname === path;
-  };
+function Section({ label, items }: { label: string; items: NavItem[] }) {
+  return (
+    <div className="flex flex-col gap-0.5">
+      <p className="text-[10.5px] text-gray-400 uppercase tracking-widest font-semibold px-3 mb-1">{label}</p>
+      {items.map(item => <NavLink key={item.href} {...item} />)}
+    </div>
+  );
+}
 
-  const linkStyle = (path: string) => ({
-    display: "block",
-    padding: "10px 16px",
-    textDecoration: "none",
-    color: isLinkActive(path) ? "white" : "#9ca3af",
-    backgroundColor: isLinkActive(path) ? "var(--brand-red)" : "transparent",
-    borderRadius: 6,
-    fontSize: 14,
-    fontWeight: "500",
-    transition: "all 0.2s ease",
-  });
+export function Sidebar({ role }: SidebarProps) {
+  const adminFeatures: NavItem[] = [
+    { href: "/admin",                    label: "Dashboard",          icon: <LayoutDashboard size={15} /> },
+    { href: "/admin/periods",            label: "Grading Sheet",      icon: <ClipboardList size={15} /> },
+    { href: "/admin/procedure-summary",  label: "Procedure Summary",  icon: <TrendingUp size={15} /> },
+    { href: "/admin/residents",          label: "Residents",          icon: <Users size={15} /> },
+    { href: "/admin/evaluators",         label: "Evaluators",         icon: <UserCheck size={15} /> },
+    { href: "/admin/patients",           label: "Patients",           icon: <Activity size={15} /> },
+  ];
+
+  const adminSystem: NavItem[] = [
+    { href: "/admin/forms",       label: "Forms config",       icon: <FileSpreadsheet size={15} /> },
+    { href: "/admin/domains",     label: "Domains config",     icon: <Network size={15} /> },
+    { href: "/admin/procedures",  label: "Procedures config",  icon: <Settings size={15} /> },
+  ];
+
+  const evaluatorLinks: NavItem[] = [
+    { href: "/evaluator",      label: "Dashboard",         icon: <LayoutDashboard size={15} /> },
+    { href: "/evaluator/new",  label: "Submit Evaluation", icon: <FileText size={15} /> },
+  ];
+
+  const residentLinks: NavItem[] = [
+    { href: "/resident",             label: "Dashboard",       icon: <LayoutDashboard size={15} /> },
+    { href: "/resident/ratings",     label: "Ratings",         icon: <Award size={15} /> },
+    { href: "/resident/procedures",  label: "Procedure Count", icon: <Activity size={15} /> },
+  ];
 
   return (
-    <aside
-      style={{
-        width: 260,
-        backgroundColor: "#111827",
-        color: "#f3f4f6",
-        padding: "24px 16px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 24,
-        overflowY: "auto",
-        borderRight: "1px solid #1f2937",
-      }}
-    >
-      {/* FEATURES Section */}
-      <div>
-        <h5 style={{ margin: "0 0 12px 16px", fontSize: 11, color: "#4b5563", letterSpacing: "1.5px", textTransform: "uppercase" }}>
-          Features
-        </h5>
-        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-          {/* Admin Links */}
-          {role === "ADMIN" ? (
-            <>
-              <Link href="/admin" style={linkStyle("/admin")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <LayoutDashboard size={16} /> Dashboard
-                </span>
-              </Link>
-              <Link href="/admin/periods" style={linkStyle("/admin/periods")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <ClipboardList size={16} /> Grading Sheet
-                </span>
-              </Link>
-              <Link href="/admin/procedure-summary" style={linkStyle("/admin/procedure-summary")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <TrendingUp size={16} /> Procedure Summary
-                </span>
-              </Link>
-              <Link href="/admin/residents" style={linkStyle("/admin/residents")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <Users size={16} /> Residents (Doctors)
-                </span>
-              </Link>
-              <Link href="/admin/evaluators" style={linkStyle("/admin/evaluators")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <UserCheck size={16} /> Evaluators (Doctors)
-                </span>
-              </Link>
-              <Link href="/admin/patients" style={linkStyle("/admin/patients")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <Activity size={16} /> Patients
-                </span>
-              </Link>
-            </>
-          ) : null}
+    <aside className="w-[240px] shrink-0 bg-white border-r border-gray-200 flex flex-col gap-5 px-3 py-5 overflow-y-auto">
 
-          {/* Evaluator Links */}
-          {role === "EVALUATOR" ? (
-            <>
-              <Link href="/evaluator" style={linkStyle("/evaluator")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <LayoutDashboard size={16} /> Dashboard
-                </span>
-              </Link>
-              <Link href="/evaluator/new" style={linkStyle("/evaluator/new")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <FileText size={16} /> Submit Evaluation
-                </span>
-              </Link>
-            </>
-          ) : null}
-
-          {/* Resident Links */}
-          {role === "RESIDENT" ? (
-            <>
-              <Link href="/resident" style={linkStyle("/resident")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <LayoutDashboard size={16} /> Dashboard
-                </span>
-              </Link>
-              <Link href="/resident/ratings" style={linkStyle("/resident/ratings")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <Award size={16} /> Ratings
-                </span>
-              </Link>
-              <Link href="/resident/procedures" style={linkStyle("/resident/procedures")}>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                  <Activity size={16} /> Procedure Count
-                </span>
-              </Link>
-            </>
-          ) : null}
+      {/* Logo */}
+      <div className="flex items-center gap-2.5 px-3 mb-1">
+        <div className="w-7 h-7 rounded-lg overflow-hidden shadow-sm flex-shrink-0">
+          <img src="/oas_logo.png" alt="OAS Portal" className="w-full h-full object-cover" />
         </div>
+        <span className="text-[13.5px] font-bold text-gray-900 tracking-tight">OAS Portal</span>
       </div>
 
-      {/* SYSTEM Section (Admin Only) */}
-      {role === "ADMIN" ? (
-        <div>
-          <h5 style={{ margin: "0 0 12px 16px", fontSize: 11, color: "#4b5563", letterSpacing: "1.5px", textTransform: "uppercase" }}>
-            System
-          </h5>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            <Link href="/admin/forms" style={linkStyle("/admin/forms")}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                <FileSpreadsheet size={16} /> Forms config
-              </span>
-            </Link>
-            <Link href="/admin/domains" style={linkStyle("/admin/domains")}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                <Network size={16} /> Domains config
-              </span>
-            </Link>
-            <Link href="/admin/procedures" style={linkStyle("/admin/procedures")}>
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 10 }}>
-                <Settings size={16} /> Procedures config
-              </span>
-            </Link>
-          </div>
-        </div>
-      ) : null}
+      {role === "ADMIN" && (
+        <>
+          <Section label="Features" items={adminFeatures} />
+          <Section label="System" items={adminSystem} />
+        </>
+      )}
+
+      {role === "EVALUATOR" && (
+        <Section label="Features" items={evaluatorLinks} />
+      )}
+
+      {role === "RESIDENT" && (
+        <Section label="Features" items={residentLinks} />
+      )}
     </aside>
   );
 }

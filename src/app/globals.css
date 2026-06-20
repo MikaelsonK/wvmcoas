@@ -1,31 +1,14 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 @import "tailwindcss";
 
-/* ── Brand tokens — available as Tailwind utilities (text-brand-red, bg-brand-gold, etc.) ── */
+/* ── Brand tokens — Tailwind v4 theme (text-brand-red, bg-brand-gold, etc.) ── */
 @theme {
-  --color-brand-red:   #a00707;
-  --color-brand-gold:  #cd9804;
-  --color-brand-white: #ffffff;
-}
-
-/* ── CSS variables — kept for inline style={} usage in app components ── */
-:root {
-  --maxw:   1200px;
-  --pad:    24px;
-  --border: #e5e7eb;
-  --text:   #242424;
-  --text-dark: #111827;
-  --muted:  #6b7280;
-
-  --brand-red:    #a00707;
-  --brand-gold:   #cd9804;
-  --brand-white:  #ffffff;
-  --brand-green:  #96bfa4;
-  --brand-crimson:#c52744;
-  --brand-peach:  #eab984;
-
-  --bg-primary:   #ffffff;
-  --bg-secondary: #f8fafc;
+  --color-brand-red:     #a00707;
+  --color-brand-gold:    #cd9804;
+  --color-brand-white:   #ffffff;
+  --color-brand-green:   #96bfa4;
+  --color-brand-crimson: #c52744;
+  --color-brand-peach:   #eab984;
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -37,16 +20,13 @@
   }
 
   body {
-    @apply m-0 antialiased;
+    @apply m-0 antialiased text-[#242424] bg-[#f8fafc];
     font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, sans-serif;
-    color: var(--text);
-    background: var(--bg-secondary);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply mt-0 font-semibold;
+    @apply mt-0 font-semibold text-gray-900;
     font-family: 'Poppins', sans-serif;
-    color: var(--text-dark);
   }
 
   /* Default sizes for app pages — Tailwind text-* utilities override these */
@@ -57,25 +37,6 @@
   a {
     @apply transition-colors duration-150;
     color: inherit;
-  }
-
-  label,
-  .form-label {
-    @apply block text-[13px] mb-1.5 font-semibold;
-    color: var(--text);
-  }
-
-  /* Native form elements */
-  select,
-  textarea {
-    @apply w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm bg-white outline-none transition-all duration-200;
-    font-family: 'Poppins', sans-serif;
-    color: var(--text);
-
-    &:focus {
-      @apply border-brand-gold;
-      box-shadow: 0 0 0 3px rgba(205, 152, 4, 0.15);
-    }
   }
 }
 
@@ -108,7 +69,7 @@
            inline-flex items-center justify-center gap-2 text-white
            transition-all duration-200;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(135deg, var(--brand-red) 0%, #880505 100%);
+    background: linear-gradient(135deg, #a00707 0%, #880505 100%);
     box-shadow: 0 4px 12px rgba(160, 7, 7, 0.15);
 
     &:hover {
@@ -122,10 +83,9 @@
   .button-secondary {
     @apply cursor-pointer text-sm rounded-lg px-5 py-2.5 font-medium
            inline-flex items-center justify-center gap-2
-           bg-white border border-gray-200
+           bg-white border border-gray-200 text-gray-900
            transition-all duration-200;
     font-family: 'Poppins', sans-serif;
-    color: var(--text-dark);
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 
     &:hover {
@@ -137,36 +97,14 @@
   }
 
   .button-success {
-    @apply cursor-pointer font-semibold transition-all duration-200;
-    background: var(--brand-green);
-    color: #064e3b;
+    @apply cursor-pointer font-semibold transition-all duration-200 bg-brand-green text-emerald-900;
 
     &:hover { @apply brightness-105; }
   }
 
-  /* ── Input ── */
-  .input-field {
-    @apply w-full px-3.5 py-2.5 border border-gray-200 rounded-lg text-sm
-           bg-white outline-none transition-all duration-200;
-    font-family: 'Poppins', sans-serif;
-    color: var(--text);
-
-    &:focus {
-      @apply border-brand-gold;
-      box-shadow: 0 0 0 3px rgba(205, 152, 4, 0.15);
-    }
-  }
-
-  .input-error {
-    border-color: var(--brand-crimson) !important;
-    box-shadow: 0 0 0 3px rgba(197, 39, 68, 0.15) !important;
-  }
-
   /* ── Links ── */
   .link-primary {
-    @apply text-brand-red no-underline font-semibold hover:underline;
-
-    &:hover { color: #880505; }
+    @apply text-brand-red no-underline font-semibold hover:underline hover:text-[#880505];
   }
 
   .link-secondary {
@@ -184,8 +122,7 @@
   }
 
   .table td {
-    @apply px-4 py-3.5 text-[13px] border-b border-gray-200 align-middle;
-    color: var(--text);
+    @apply px-4 py-3.5 text-[13px] border-b border-gray-200 align-middle text-[#242424];
   }
 
   .table tr:last-child td { @apply border-b-0; }
@@ -194,10 +131,7 @@
 
   /* ── Nav ── */
   .nav {
-    @apply py-4 bg-white;
-    border-bottom: 3px solid var(--brand-gold);
-    padding-left: var(--pad);
-    padding-right: var(--pad);
+    @apply py-4 px-6 bg-white border-b-[3px] border-b-brand-gold;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   }
 
@@ -220,8 +154,7 @@
   }
 
   .info-box-light {
-    @apply border border-gray-200;
-    background: var(--bg-secondary);
+    @apply border border-gray-200 bg-[#f8fafc];
   }
 
   .info-box-warning {

@@ -13,11 +13,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <body>
         <Providers>
           {session ? (
-            <div style={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+            <div className="flex flex-col h-screen">
               <TopHeader user={session.user} />
-              <div style={{ display: "flex", flex: 1, overflow: "hidden" }}>
+              <div className="flex flex-1 overflow-hidden">
                 <Sidebar role={session.user.role} />
-                <main style={{ flex: 1, overflowY: "auto", padding: 24, backgroundColor: "var(--bg-secondary)" }}>
+                <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
                   {children}
                 </main>
               </div>
