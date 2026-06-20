@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Search, Loader2, X } from "lucide-react";
 
 interface SearchBarProps {
@@ -21,13 +21,21 @@ export function SearchBar({
   const [value, setValue] = useState(defaultValue);
   const [isPending, startTransition] = useTransition();
 
+  // Keep a ref to searchParams so we can read it inside the effect
+  // without making it a reactive dependency (which would cause an infinite loop:
+  // value change → URL update → searchParams change → effect re-fires → …)
+  const searchParamsRef = useRef(searchParams);
+  useEffect(() => {
+    searchParamsRef.current = searchParams;
+  });
+
   useEffect(() => {
     setValue(defaultValue);
   }, [defaultValue]);
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      const params = new URLSearchParams(searchParams.toString());
+      const params = new URLSearchParams(searchParamsRef.current.toString());
       if (value.trim()) {
         params.set("q", value);
       } else {
@@ -40,7 +48,9 @@ export function SearchBar({
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [value, pathname, router, searchParams]);
+    // ✅ searchParams intentionally excluded — we use searchParamsRef instead
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, pathname, router]);
 
   const handleClear = () => {
     setValue("");

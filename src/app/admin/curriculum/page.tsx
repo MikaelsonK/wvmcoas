@@ -41,9 +41,9 @@ export default async function AdminCurriculumPage() {
   return (
     <div className="p-4 sm:p-6">
       <div className="mb-6">
-        <h1 className="text-lg font-bold text-gray-900">Curriculum & Settings Hub</h1>
-        <p className="text-sm text-gray-400 mt-0.5">
-          Manage clinical competency domains, medical procedures, and evaluation sheets mapping.
+        <h1 className="text-xl font-extrabold text-gray-900 tracking-tight">Curriculum Hub</h1>
+        <p className="text-sm text-gray-400 mt-1">
+          Manage clinical domains, procedures, and evaluation forms — and map how they connect.
         </p>
       </div>
 

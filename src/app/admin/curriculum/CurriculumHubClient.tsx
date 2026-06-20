@@ -1,12 +1,28 @@
 "use client";
 
 import React, { useState, useTransition } from "react";
-import { Network, Folder, BookOpen, Layers, Trash2, ArrowRight } from "lucide-react";
+import {
+  Folder,
+  FolderOpen,
+  BookOpen,
+  FileText,
+  Trash2,
+  Settings,
+  ChevronRight,
+  AlertTriangle,
+  Activity,
+  CheckCircle2,
+  Circle,
+  Tag,
+} from "lucide-react";
 import { updateProcedureDomain, updateFormMappings, deleteDomain, deleteProcedure, deleteForm } from "./actions";
 import { CreateDomainModalTrigger } from "@/components/CreateDomainForm";
 import { CreateCategoryModalTrigger } from "@/components/CreateCategoryForm";
 import { CreateProcedureModalTrigger } from "@/components/CreateProcedureForm";
 import { CreateFormConfigModalTrigger } from "@/components/CreateFormConfigForm";
+import { DialogModal } from "@/components/DialogModal";
+
+// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DomainRow {
   id: string;
@@ -42,156 +58,132 @@ interface CurriculumHubClientProps {
   procedureTypes: { id: string; name: string }[];
 }
 
+type NavSection = "domains" | "procedures" | "forms";
+
+// ─── Two-step Delete Button ────────────────────────────────────────────────────
+
+function DeleteButton({ onConfirm, label }: { onConfirm: () => void; label: string }) {
+  const [armed, setArmed] = useState(false);
+
+  if (armed) {
+    return (
+      <div className="flex items-center gap-1 animate-in fade-in duration-150">
+        <button
+          onClick={() => { onConfirm(); setArmed(false); }}
+          className="flex items-center gap-1 px-2 py-1 text-[11px] font-bold text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors cursor-pointer"
+        >
+          <AlertTriangle size={10} /> Confirm
+        </button>
+        <button
+          onClick={() => setArmed(false)}
+          className="px-2 py-1 text-[11px] font-medium text-gray-500 hover:text-gray-800 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors cursor-pointer"
+        >
+          Cancel
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setArmed(true)}
+      className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-all cursor-pointer"
+      title={`Delete ${label}`}
+    >
+      <Trash2 size={13} />
+    </button>
+  );
+}
+
+// ─── Stat Pill ─────────────────────────────────────────────────────────────────
+
+function StatPill({ icon, label, value, color }: { icon: React.ReactNode; label: string; value: number; color: string }) {
+  return (
+    <div className={`flex items-center gap-2 px-3 py-2 rounded-xl border ${color} bg-white`}>
+      <span className="opacity-70">{icon}</span>
+      <div>
+        <p className="text-[18px] font-extrabold leading-none">{value}</p>
+        <p className="text-[10px] font-medium opacity-60 mt-0.5">{label}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─── Badge ─────────────────────────────────────────────────────────────────────
+
+function Badge({ count, color = "gray" }: { count: number; color?: "red" | "gold" | "blue" | "gray" }) {
+  const colors = {
+    red: "bg-red-100 text-red-700 border-red-200",
+    gold: "bg-amber-100 text-amber-700 border-amber-200",
+    blue: "bg-blue-100 text-blue-700 border-blue-200",
+    gray: "bg-gray-100 text-gray-500 border-gray-200",
+  };
+  return (
+    <span className={`inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-[10px] font-bold rounded-full border ${colors[color]}`}>
+      {count}
+    </span>
+  );
+}
+
+// ─── Mapping Chip ──────────────────────────────────────────────────────────────
+
+function MappingChip({ icon, label, variant }: { icon: React.ReactNode; label: string; variant: "domain" | "procedure" | "unmapped" }) {
+  if (variant === "unmapped") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-medium rounded-full bg-gray-100 text-gray-400 border border-gray-200">
+        <Circle size={8} /> Unmapped
+      </span>
+    );
+  }
+  if (variant === "domain") {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-semibold rounded-full bg-red-50 text-red-700 border border-red-200">
+        <Folder size={9} /> {label}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[10.5px] font-semibold rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+      <BookOpen size={9} /> {label}
+    </span>
+  );
+}
+
+// ─── Empty State ───────────────────────────────────────────────────────────────
+
+function EmptyState({ icon, title, description, action }: { icon: React.ReactNode; title: string; description: string; action?: React.ReactNode }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16 px-6 text-center">
+      <div className="w-14 h-14 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-300 mb-4">
+        {icon}
+      </div>
+      <h3 className="text-sm font-semibold text-gray-700 mb-1">{title}</h3>
+      <p className="text-xs text-gray-400 max-w-xs mb-4">{description}</p>
+      {action}
+    </div>
+  );
+}
+
+// ─── Main Component ────────────────────────────────────────────────────────────
+
 export function CurriculumHubClient({
   domains,
   procedures,
   forms,
   procedureTypes,
 }: CurriculumHubClientProps) {
-  const [activeTab, setActiveTab] = useState<"columns" | "graph">("columns");
-  const [selectedDomainId, setSelectedDomainId] = useState<string | null>(null);
-  const [hoveredNode, setHoveredNode] = useState<{ type: "domain" | "procedure" | "form"; id: string } | null>(null);
+  const [activeSection, setActiveSection] = useState<NavSection>("domains");
   const [isPending, startTransition] = useTransition();
+  const [editingProcedure, setEditingProcedure] = useState<ProcedureRow | null>(null);
+  const [editingForm, setEditingForm] = useState<FormRow | null>(null);
 
-  const [draggingLink, setDraggingLink] = useState<{
-    sourceType: "domain" | "procedure" | "form";
-    sourceId: string;
-    startX: number;
-    startY: number;
-  } | null>(null);
-  const [dragCoords, setDragCoords] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [dropTarget, setDropTarget] = useState<{ type: "domain" | "procedure" | "form"; id: string } | null>(null);
+  // Stats
+  const rootDomains = domains.filter((d) => !d.parentId);
+  const unmappedProcedures = procedures.filter((p) => !p.domainId);
+  const unmappedForms = forms.filter((f) => !f.domainId && !f.procedureId);
+  const totalUnmapped = unmappedProcedures.length + unmappedForms.length;
 
-  const handleMouseDown = (
-    e: React.MouseEvent,
-    sourceType: "domain" | "procedure" | "form",
-    sourceId: string,
-    startX: number,
-    startY: number
-  ) => {
-    e.stopPropagation();
-    e.preventDefault();
-    setDraggingLink({ sourceType, sourceId, startX, startY });
-    setDragCoords({ x: startX, y: startY });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (!draggingLink) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = ((e.clientX - rect.left) / rect.width) * 800;
-    const y = ((e.clientY - rect.top) / rect.height) * 520;
-    setDragCoords({ x, y });
-  };
-
-  const handleMouseUp = () => {
-    if (!draggingLink) return;
-
-    if (dropTarget) {
-      const { sourceType, sourceId } = draggingLink;
-      const { type: targetType, id: targetId } = dropTarget;
-
-      if (sourceType === "procedure" && targetType === "domain") {
-        startTransition(async () => {
-          await updateProcedureDomain(sourceId, targetId);
-        });
-      } else if (sourceType === "form" && targetType === "domain") {
-        const form = forms.find((f) => f.id === sourceId);
-        if (form) {
-          startTransition(async () => {
-            await updateFormMappings(sourceId, targetId, form.procedureId);
-          });
-        }
-      } else if (sourceType === "form" && targetType === "procedure") {
-        const form = forms.find((f) => f.id === sourceId);
-        if (form) {
-          startTransition(async () => {
-            await updateFormMappings(sourceId, form.domainId, targetId);
-          });
-        }
-      }
-    }
-
-    setDraggingLink(null);
-    setDropTarget(null);
-  };
-
-  // Helper: Find all descendant domain IDs
-  const getDescendantIds = (domainId: string): string[] => {
-    const list: string[] = [domainId];
-    const queue = [domainId];
-    while (queue.length > 0) {
-      const current = queue.shift()!;
-      const children = domains.filter((d) => d.parentId === current);
-      for (const child of children) {
-        if (!list.includes(child.id)) {
-          list.push(child.id);
-          queue.push(child.id);
-        }
-      }
-    }
-    return list;
-  };
-
-  const activeDomainIds = selectedDomainId ? getDescendantIds(selectedDomainId) : [];
-
-  // Filtered lists based on sidebar selection
-  const filteredProcedures = selectedDomainId
-    ? procedures.filter((p) => p.domainId && activeDomainIds.includes(p.domainId))
-    : procedures;
-
-  const filteredForms = selectedDomainId
-    ? forms.filter(
-        (f) =>
-          (f.domainId && activeDomainIds.includes(f.domainId)) ||
-          (f.procedureId &&
-            procedures.some(
-              (p) => p.id === f.procedureId && p.domainId && activeDomainIds.includes(p.domainId)
-            ))
-      )
-    : forms;
-
-  // Connection Helpers (for highlights)
-  const isConnected = (type: "domain" | "procedure" | "form", id: string): boolean => {
-    if (!hoveredNode) return true; // Default: no highlight filter, fully colored
-
-    const { type: ht, id: hid } = hoveredNode;
-
-    if (ht === "domain") {
-      const descIds = getDescendantIds(hid);
-      if (type === "domain") return descIds.includes(id) || id === hid;
-      if (type === "procedure") return !!(procedures.find((p) => p.id === id)?.domainId && descIds.includes(procedures.find((p) => p.id === id)!.domainId!));
-      if (type === "form") {
-        const formObj = forms.find((f) => f.id === id);
-        if (!formObj) return false;
-        const directlyMapped = formObj.domainId && descIds.includes(formObj.domainId);
-        const procedureMapped =
-          formObj.procedureId &&
-          procedures.some(
-            (p) => p.id === formObj.procedureId && p.domainId && descIds.includes(p.domainId)
-          );
-        return !!(directlyMapped || procedureMapped);
-      }
-    }
-
-    if (ht === "procedure") {
-      const proc = procedures.find((p) => p.id === hid);
-      if (!proc) return false;
-      if (type === "domain") return id === proc.domainId;
-      if (type === "procedure") return id === hid;
-      if (type === "form") return forms.find((f) => f.id === id)?.procedureId === hid;
-    }
-
-    if (ht === "form") {
-      const form = forms.find((f) => f.id === hid);
-      if (!form) return false;
-      if (type === "domain") return id === form.domainId;
-      if (type === "procedure") return id === form.procedureId;
-      if (type === "form") return id === hid;
-    }
-
-    return false;
-  };
-
+  // Handlers
   const handleProcedureDomainChange = (procId: string, domainId: string) => {
     startTransition(async () => {
       await updateProcedureDomain(procId, domainId === "unmapped" ? null : domainId);
@@ -209,671 +201,553 @@ export function CurriculumHubClient({
   };
 
   const handleDeleteDomain = (id: string) => {
-    if (confirm("Are you sure you want to delete this domain? This will not delete sub-domains or forms, but will remove their association.")) {
-      startTransition(async () => {
-        await deleteDomain(id);
-        if (selectedDomainId === id) setSelectedDomainId(null);
-      });
-    }
+    startTransition(async () => {
+      await deleteDomain(id);
+    });
   };
 
   const handleDeleteProcedure = (id: string) => {
-    if (confirm("Are you sure you want to delete this procedure?")) {
-      startTransition(async () => {
-        await deleteProcedure(id);
-      });
-    }
+    startTransition(async () => {
+      await deleteProcedure(id);
+    });
   };
 
   const handleDeleteForm = (id: string) => {
-    if (confirm("Are you sure you want to delete this form? All questions and associated evaluations will be lost!")) {
-      startTransition(async () => {
-        await deleteForm(id);
-      });
-    }
+    startTransition(async () => {
+      await deleteForm(id);
+    });
   };
 
-  // Node placements for visual graph
-  const graphDomains = domains.filter((d) => !d.parentId); // Only root domains for simple graph readability
-  const graphProcedures = procedures.filter((p) => p.domainId);
-  const graphForms = forms.filter((f) => f.domainId || f.procedureId);
+  // Group procedures by category
+  const proceduresByCategory: Record<string, ProcedureRow[]> = {};
+  for (const proc of procedures) {
+    const cat = proc.type.name;
+    if (!proceduresByCategory[cat]) proceduresByCategory[cat] = [];
+    proceduresByCategory[cat].push(proc);
+  }
+
+  // Navigation items
+  const navItems: { id: NavSection; label: string; icon: React.ReactNode; count: number; color: "red" | "gold" | "blue" | "gray" }[] = [
+    { id: "domains", label: "Clinical Domains", icon: <Folder size={16} />, count: domains.length, color: "red" },
+    { id: "procedures", label: "Procedures", icon: <BookOpen size={16} />, count: procedures.length, color: "gold" },
+    { id: "forms", label: "Evaluation Forms", icon: <FileText size={16} />, count: forms.length, color: "blue" },
+  ];
 
   return (
-    <div className={`transition-opacity duration-200 ${isPending ? "opacity-60" : "opacity-100"}`}>
-      {/* Tab Navigation */}
-      <div className="flex border-b border-gray-200 mb-5">
-        <button
-          onClick={() => setActiveTab("columns")}
-          className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
-            activeTab === "columns"
-              ? "border-brand-red text-brand-red"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <Layers size={15} /> Column Map
-        </button>
-        <button
-          onClick={() => setActiveTab("graph")}
-          className={`px-4 py-2.5 text-sm font-semibold border-b-2 transition-colors flex items-center gap-2 cursor-pointer ${
-            activeTab === "graph"
-              ? "border-brand-red text-brand-red"
-              : "border-transparent text-gray-500 hover:text-gray-900"
-          }`}
-        >
-          <Network size={15} /> Visual Schema Graph
-        </button>
+    <div className={`transition-opacity duration-200 ${isPending ? "opacity-60 pointer-events-none" : "opacity-100"}`}>
+
+      {/* Stats Bar */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <StatPill icon={<Folder size={16} className="text-red-600" />} label="Domains" value={domains.length} color="border-red-200 text-red-800" />
+        <StatPill icon={<BookOpen size={16} className="text-amber-600" />} label="Procedures" value={procedures.length} color="border-amber-200 text-amber-800" />
+        <StatPill icon={<FileText size={16} className="text-blue-600" />} label="Eval Forms" value={forms.length} color="border-blue-200 text-blue-800" />
+        <StatPill icon={<AlertTriangle size={16} className="text-orange-500" />} label="Unmapped" value={totalUnmapped} color={totalUnmapped > 0 ? "border-orange-200 text-orange-700" : "border-gray-200 text-gray-500"} />
       </div>
 
-      {activeTab === "columns" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* COLUMN 1: DOMAINS */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs flex flex-col h-[600px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <Folder className="text-brand-red" size={16} /> Clinical Domains
-                </h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">Select a domain to filter mappings.</p>
-              </div>
-              <CreateDomainModalTrigger domains={domains} />
-            </div>
+      {/* Main Layout */}
+      <div className="flex gap-5 items-start">
 
-            <div className="flex-1 overflow-y-auto p-4 flex flex-col gap-2">
-              <button
-                onClick={() => setSelectedDomainId(null)}
-                className={`w-full text-left px-3 py-2 rounded-lg text-xs font-semibold transition-all ${
-                  !selectedDomainId
-                    ? "bg-brand-red/10 text-brand-red border border-brand-red/20 shadow-xs"
-                    : "bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200"
-                }`}
-              >
-                📁 Show All Domains
-              </button>
-
-              <div className="space-y-1 mt-2">
-                {domains
-                  .filter((d) => !d.parentId)
-                  .map((root) => {
-                    const rootChildren = domains.filter((d) => d.parentId === root.id);
-                    const isSelected = selectedDomainId === root.id;
-                    const isAnyChildSelected = selectedDomainId && getDescendantIds(root.id).includes(selectedDomainId);
-
-                    return (
-                      <div
-                        key={root.id}
-                        onMouseEnter={() => setHoveredNode({ type: "domain", id: root.id })}
-                        onMouseLeave={() => setHoveredNode(null)}
-                        className={`rounded-lg border transition-all p-2.5 ${
-                          isSelected
-                            ? "bg-brand-red/5 border-brand-red/35"
-                            : isConnected("domain", root.id)
-                            ? "border-gray-100 hover:border-gray-200"
-                            : "opacity-40 border-transparent"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-2">
-                          <button
-                            onClick={() => setSelectedDomainId(root.id)}
-                            className="flex-1 text-left font-bold text-[12.5px] text-gray-900 truncate hover:text-brand-red transition-colors"
-                          >
-                            🔴 {root.name}
-                          </button>
-                          <button
-                            onClick={() => handleDeleteDomain(root.id)}
-                            className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                            title="Delete Domain"
-                          >
-                            <Trash2 size={12.5} />
-                          </button>
-                        </div>
-
-                        {/* Children */}
-                        {rootChildren.length > 0 && (
-                          <div className="pl-4 mt-2 border-l border-gray-100 space-y-1.5">
-                            {rootChildren.map((child) => {
-                              const isChildSelected = selectedDomainId === child.id;
-                              return (
-                                <div
-                                  key={child.id}
-                                  onMouseEnter={(e) => {
-                                    e.stopPropagation();
-                                    setHoveredNode({ type: "domain", id: child.id });
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.stopPropagation();
-                                    setHoveredNode(null);
-                                  }}
-                                  className={`flex items-center justify-between gap-2 p-1.5 rounded-md transition-all ${
-                                    isChildSelected
-                                      ? "bg-brand-red/10 text-brand-red font-semibold"
-                                      : isConnected("domain", child.id)
-                                      ? "text-gray-600 hover:bg-gray-50"
-                                      : "opacity-40"
-                                  }`}
-                                >
-                                  <button
-                                    onClick={() => setSelectedDomainId(child.id)}
-                                    className="flex-1 text-left text-[12px] truncate"
-                                  >
-                                    🔸 {child.name}
-                                  </button>
-                                  <button
-                                    onClick={() => handleDeleteDomain(child.id)}
-                                    className="text-gray-400 hover:text-red-600 transition-colors"
-                                  >
-                                    <Trash2 size={11} />
-                                  </button>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-              </div>
-            </div>
+        {/* Left Navigation Panel */}
+        <div className="w-[220px] shrink-0 bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-xs sticky top-4">
+          <div className="px-4 py-3 border-b border-gray-100 bg-gray-50/70">
+            <p className="text-[10.5px] font-bold text-gray-400 uppercase tracking-widest">Curriculum</p>
           </div>
-
-          {/* COLUMN 2: PROCEDURES */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs flex flex-col h-[600px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <BookOpen className="text-brand-gold" size={16} /> Mapped Procedures
-                </h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">Define procedures and link them to domains.</p>
-              </div>
-              <div className="flex gap-1.5">
-                <CreateCategoryModalTrigger />
-                <CreateProcedureModalTrigger categories={procedureTypes} />
-              </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {filteredProcedures.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-10">No procedures found in the active scope.</p>
-              ) : (
-                filteredProcedures.map((proc) => {
-                  const active = isConnected("procedure", proc.id);
-                  return (
-                    <div
-                      key={proc.id}
-                      onMouseEnter={() => setHoveredNode({ type: "procedure", id: proc.id })}
-                      onMouseLeave={() => setHoveredNode(null)}
-                      className={`p-3 rounded-lg border border-gray-150 transition-all ${
-                        active ? "bg-white hover:shadow-xs" : "opacity-30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <strong className="text-[12.5px] font-semibold text-gray-900 block leading-tight">
-                            {proc.name}
-                          </strong>
-                          <span className="text-[10.5px] text-gray-400 font-medium bg-gray-100 px-1.5 py-0.5 rounded mt-1.5 inline-block">
-                            📂 {proc.type.name}
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleDeleteProcedure(proc.id)}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        >
-                          <Trash2 size={12.5} />
-                        </button>
-                      </div>
-
-                      {/* Domain Mapping Dropdown */}
-                      <div className="mt-3 pt-2.5 border-t border-gray-100 flex items-center justify-between gap-2">
-                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Domain</span>
-                        <select
-                          value={proc.domainId || "unmapped"}
-                          onChange={(e) => handleProcedureDomainChange(proc.id, e.target.value)}
-                          className="text-[11px] text-gray-700 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-brand-red focus:bg-white transition-colors max-w-[160px]"
-                        >
-                          <option value="unmapped">Unmapped</option>
-                          {domains.map((d) => (
-                            <option key={d.id} value={d.id}>
-                              {d.parentId ? "🔸" : "🔴"} {d.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-
-          {/* COLUMN 3: FORMS */}
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden shadow-xs flex flex-col h-[600px]">
-            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-3 bg-gray-50/50">
-              <div>
-                <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <Network className="text-brand-red" size={16} /> Evaluation Forms
-                </h3>
-                <p className="text-[11px] text-gray-400 mt-0.5">Map forms to domains or procedures.</p>
-              </div>
-              <CreateFormConfigModalTrigger domains={domains} />
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
-              {filteredForms.length === 0 ? (
-                <p className="text-xs text-gray-400 text-center py-10">No evaluation forms found.</p>
-              ) : (
-                filteredForms.map((form) => {
-                  const active = isConnected("form", form.id);
-                  return (
-                    <div
-                      key={form.id}
-                      onMouseEnter={() => setHoveredNode({ type: "form", id: form.id })}
-                      onMouseLeave={() => setHoveredNode(null)}
-                      className={`p-3 rounded-lg border border-gray-150 transition-all ${
-                        active ? "bg-white hover:shadow-xs" : "opacity-30"
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <strong className="text-[12.5px] font-semibold text-gray-900 block leading-tight">
-                            {form.title}
-                          </strong>
-                          <span className="text-[10px] text-brand-red font-medium bg-brand-red/5 px-1.5 py-0.5 rounded mt-1.5 inline-block">
-                            📝 {form.questions.length} criteria
-                          </span>
-                        </div>
-                        <button
-                          onClick={() => handleDeleteForm(form.id)}
-                          className="text-gray-400 hover:text-red-600 transition-colors p-1"
-                        >
-                          <Trash2 size={12.5} />
-                        </button>
-                      </div>
-
-                      {/* Mapping Configs */}
-                      <div className="mt-3 pt-2.5 border-t border-gray-100 space-y-2">
-                        {/* Domain Link */}
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Domain Map</span>
-                          <select
-                            value={form.domainId || "unmapped"}
-                            onChange={(e) => handleFormMappingsChange(form.id, e.target.value, form.procedureId || "unmapped")}
-                            className="text-[11px] text-gray-700 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-brand-red focus:bg-white transition-colors max-w-[160px]"
-                          >
-                            <option value="unmapped">Unmapped</option>
-                            {domains.map((d) => (
-                              <option key={d.id} value={d.id}>
-                                {d.parentId ? "🔸" : "🔴"} {d.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-
-                        {/* Procedure Link */}
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Procedure Map</span>
-                          <select
-                            value={form.procedureId || "unmapped"}
-                            onChange={(e) => handleFormMappingsChange(form.id, form.domainId || "unmapped", e.target.value)}
-                            className="text-[11px] text-gray-700 bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5 outline-none focus:border-brand-red focus:bg-white transition-colors max-w-[160px]"
-                          >
-                            <option value="unmapped">Unmapped</option>
-                            {procedures.map((p) => (
-                              <option key={p.id} value={p.id}>
-                                🩺 {p.name}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {activeTab === "graph" && (
-        <div className="w-full bg-white border border-gray-200 rounded-xl overflow-hidden shadow-sm p-4 relative select-none">
-          <div className="flex items-center justify-between gap-3 mb-2 flex-wrap">
-            <div>
-              <h3 className="text-sm font-bold text-gray-900">Visual Curriculum Map</h3>
-              <p className="text-[11.5px] text-gray-400">
-                Drag from any <span className="font-semibold text-gray-700">source anchor dot (left of circles)</span> and drop it onto a target node to live-update mapping relationships.
+          <nav className="p-2 flex flex-col gap-0.5">
+            {navItems.map((item) => {
+              const isActive = activeSection === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveSection(item.id)}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-left transition-all duration-150 cursor-pointer group ${
+                    isActive
+                      ? "bg-brand-red text-white shadow-sm"
+                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className={isActive ? "text-white" : "text-gray-400 group-hover:text-gray-600"}>
+                      {item.icon}
+                    </span>
+                    <span className="text-[13px] font-semibold">{item.label}</span>
+                  </div>
+                  <span
+                    className={`text-[10px] font-bold min-w-[20px] h-5 flex items-center justify-center rounded-full px-1.5 ${
+                      isActive ? "bg-white/20 text-white" : "bg-gray-100 text-gray-500"
+                    }`}
+                  >
+                    {item.count}
+                  </span>
+                </button>
+              );
+            })}
+          </nav>
+          <div className="p-2 pt-0">
+            <div className="border-t border-gray-100 mt-1 pt-2 px-2">
+              <p className="text-[10px] text-gray-400 leading-relaxed">
+                Select a section to manage domains, procedures, and evaluation forms.
               </p>
             </div>
-            {draggingLink && (
-              <span className="text-[10px] font-bold text-brand-red bg-brand-red/5 px-2 py-0.5 rounded border border-brand-red/25 animate-pulse">
-                🔗 DRAGGING CONNECTION...
-              </span>
-            )}
-          </div>
-
-          <div className="overflow-x-auto">
-            <svg
-              className="mx-auto min-w-[700px] w-full h-[520px] outline-none"
-              viewBox="0 0 800 520"
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-            >
-              {/* DEFINITIONS FOR SVG GRADIENTS AND FILTERS */}
-              <defs>
-                <style>{`
-                  @keyframes dash {
-                    to {
-                      stroke-dashoffset: -20;
-                    }
-                  }
-                  .animate-dash {
-                    stroke-dasharray: 6, 4;
-                    animation: dash 1s linear infinite;
-                  }
-                `}</style>
-                <filter id="glow-red" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-                <filter id="glow-gold" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                </filter>
-              </defs>
-
-              {/* CURVES / CONNECTIONS */}
-              {graphProcedures.map((proc, pIdx) => {
-                const domIdx = graphDomains.findIndex((d) => d.id === proc.domainId);
-                if (domIdx === -1) return null;
-
-                const startX = 150;
-                const startY = 80 + domIdx * 110;
-                const endX = 400;
-                const endY = 50 + pIdx * 50;
-
-                const isPathActive = !hoveredNode ||
-                  (hoveredNode.type === "domain" && hoveredNode.id === proc.domainId) ||
-                  (hoveredNode.type === "procedure" && hoveredNode.id === proc.id);
-
-                return (
-                  <g key={`path-p-${proc.id}`}>
-                    <path
-                      d={`M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`}
-                      fill="none"
-                      stroke={isPathActive ? "#a00707" : "#e5e7eb"}
-                      strokeWidth={isPathActive ? 2 : 1}
-                      strokeOpacity={isPathActive ? 0.75 : 0.25}
-                      className="transition-all duration-300"
-                    />
-                  </g>
-                );
-              })}
-
-              {graphForms.map((form, fIdx) => {
-                const formsY = 50 + fIdx * 65;
-
-                // Connection 1: Form to mapped Domain
-                let domPath = null;
-                if (form.domainId) {
-                  const domIdx = graphDomains.findIndex((d) => d.id === form.domainId);
-                  if (domIdx !== -1) {
-                    const startX = 150;
-                    const startY = 80 + domIdx * 110;
-                    const endX = 650;
-                    const endY = formsY;
-
-                    const isPathActive = !hoveredNode ||
-                      (hoveredNode.type === "domain" && hoveredNode.id === form.domainId) ||
-                      (hoveredNode.type === "form" && hoveredNode.id === form.id);
-
-                    domPath = (
-                      <path
-                        d={`M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`}
-                        fill="none"
-                        stroke={isPathActive ? "#a00707" : "#e5e7eb"}
-                        strokeWidth={isPathActive ? 1.5 : 0.75}
-                        strokeDasharray="4,4"
-                        strokeOpacity={isPathActive ? 0.6 : 0.15}
-                        className="transition-all duration-300"
-                      />
-                    );
-                  }
-                }
-
-                // Connection 2: Form to mapped Procedure
-                let procPath = null;
-                if (form.procedureId) {
-                  const procIdx = graphProcedures.findIndex((p) => p.id === form.procedureId);
-                  if (procIdx !== -1) {
-                    const startX = 400;
-                    const startY = 50 + procIdx * 50;
-                    const endX = 650;
-                    const endY = formsY;
-
-                    const isPathActive = !hoveredNode ||
-                      (hoveredNode.type === "procedure" && hoveredNode.id === form.procedureId) ||
-                      (hoveredNode.type === "form" && hoveredNode.id === form.id);
-
-                    procPath = (
-                      <path
-                        d={`M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}`}
-                        fill="none"
-                        stroke={isPathActive ? "#cd9804" : "#e5e7eb"}
-                        strokeWidth={isPathActive ? 2 : 1}
-                        strokeOpacity={isPathActive ? 0.75 : 0.25}
-                        className="transition-all duration-300"
-                      />
-                    );
-                  }
-                }
-
-                return (
-                  <g key={`paths-f-${form.id}`}>
-                    {domPath}
-                    {procPath}
-                  </g>
-                );
-              })}
-
-              {/* DYNAMIC DRAGGING LINK DRAWING */}
-              {draggingLink && (
-                <path
-                  d={`M ${draggingLink.startX} ${draggingLink.startY} C ${(draggingLink.startX + dragCoords.x) / 2} ${draggingLink.startY}, ${(draggingLink.startX + dragCoords.x) / 2} ${dragCoords.y}, ${dragCoords.x} ${dragCoords.y}`}
-                  fill="none"
-                  stroke={draggingLink.sourceType === "form" ? "#cd9804" : "#a00707"}
-                  strokeWidth="2.5"
-                  className="animate-dash"
-                />
-              )}
-
-              {/* DOMAIN NODES (COLUMN 1) */}
-              <g>
-                <text x="150" y="25" textAnchor="middle" className="text-[11px] font-extrabold fill-gray-400 uppercase tracking-widest">
-                  Clinical Domains
-                </text>
-                {graphDomains.map((dom, idx) => {
-                  const active = isConnected("domain", dom.id);
-                  const isHovered = hoveredNode?.type === "domain" && hoveredNode.id === dom.id;
-                  const cy = 80 + idx * 110;
-                  const isValidTarget = draggingLink && (draggingLink.sourceType === "procedure" || draggingLink.sourceType === "form");
-                  const isTargeted = dropTarget?.type === "domain" && dropTarget.id === dom.id;
-
-                  return (
-                    <g
-                      key={dom.id}
-                      className="cursor-pointer group"
-                      onMouseEnter={() => {
-                        setHoveredNode({ type: "domain", id: dom.id });
-                        if (isValidTarget) {
-                          setDropTarget({ type: "domain", id: dom.id });
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredNode(null);
-                        if (isValidTarget) {
-                          setDropTarget(null);
-                        }
-                      }}
-                    >
-                      <circle
-                        cx="150"
-                        cy={cy}
-                        r={isTargeted ? "30" : isHovered ? "28" : "24"}
-                        fill="#a00707"
-                        fillOpacity={active ? 1 : 0.2}
-                        stroke={isTargeted ? "#cd9804" : "#fff"}
-                        strokeWidth={isTargeted ? "4" : "3.5"}
-                        filter={isHovered || isTargeted ? "url(#glow-red)" : ""}
-                        className="transition-all duration-300"
-                      />
-                      <text
-                        x="150"
-                        y={cy + 4}
-                        textAnchor="middle"
-                        fill="#fff"
-                        className="text-[10px] font-extrabold select-none"
-                      >
-                        {dom.name.slice(0, 4).toUpperCase()}
-                      </text>
-                      <text
-                        x="135"
-                        y={cy + 4}
-                        textAnchor="end"
-                        fill={active ? "#111827" : "#9ca3af"}
-                        className={`text-[11px] font-bold transition-colors select-none ${isHovered || isTargeted ? "fill-brand-red font-extrabold" : ""}`}
-                      >
-                        {dom.name}
-                      </text>
-                    </g>
-                  );
-                })}
-              </g>
-
-              {/* PROCEDURE NODES (COLUMN 2) */}
-              <g>
-                <text x="400" y="25" textAnchor="middle" className="text-[11px] font-extrabold fill-gray-400 uppercase tracking-widest">
-                  Procedures
-                </text>
-                {graphProcedures.map((proc, idx) => {
-                  const active = isConnected("procedure", proc.id);
-                  const isHovered = hoveredNode?.type === "procedure" && hoveredNode.id === proc.id;
-                  const cy = 50 + idx * 50;
-                  const isValidTarget = draggingLink && draggingLink.sourceType === "form";
-                  const isTargeted = dropTarget?.type === "procedure" && dropTarget.id === proc.id;
-
-                  return (
-                    <g
-                      key={proc.id}
-                      className="cursor-pointer"
-                      onMouseEnter={() => {
-                        setHoveredNode({ type: "procedure", id: proc.id });
-                        if (isValidTarget) {
-                          setDropTarget({ type: "procedure", id: proc.id });
-                        }
-                      }}
-                      onMouseLeave={() => {
-                        setHoveredNode(null);
-                        if (isValidTarget) {
-                          setDropTarget(null);
-                        }
-                      }}
-                    >
-                      <circle
-                        cx="400"
-                        cy={cy}
-                        r={isTargeted ? "17" : isHovered ? "15" : "11"}
-                        fill="#96bfa4"
-                        fillOpacity={active ? 1 : 0.15}
-                        stroke={isTargeted ? "#cd9804" : "#fff"}
-                        strokeWidth={isTargeted ? "3.5" : "2.5"}
-                        className="transition-all duration-300"
-                      />
-                      <text
-                        x="380"
-                        y={cy + 4}
-                        textAnchor="end"
-                        fill={active ? "#374151" : "#9ca3af"}
-                        className={`text-[10.5px] font-semibold transition-colors select-none ${isHovered || isTargeted ? "fill-green-800 font-extrabold" : ""}`}
-                      >
-                        {proc.name.length > 32 ? proc.name.slice(0, 32) + "…" : proc.name}
-                      </text>
-
-                      {/* DRAG HANDLE FOR PROCEDURE (to connect to Domain) */}
-                      {isHovered && !draggingLink && (
-                        <circle
-                          cx="385"
-                          cy={cy}
-                          r="5.5"
-                          fill="#a00707"
-                          className="cursor-crosshair fill-red-600 hover:fill-red-800 transition-all duration-150 active:scale-125"
-                          onMouseDown={(e) => handleMouseDown(e, "procedure", proc.id, 385, cy)}
-                        >
-                          <title>Drag to connect to a Domain</title>
-                        </circle>
-                      )}
-                    </g>
-                  );
-                })}
-              </g>
-
-              {/* FORM NODES (COLUMN 3) */}
-              <g>
-                <text x="650" y="25" textAnchor="middle" className="text-[11px] font-extrabold fill-gray-400 uppercase tracking-widest">
-                  Forms
-                </text>
-                {graphForms.map((form, idx) => {
-                  const active = isConnected("form", form.id);
-                  const isHovered = hoveredNode?.type === "form" && hoveredNode.id === form.id;
-                  const cy = 50 + idx * 65;
-
-                  return (
-                    <g
-                      key={form.id}
-                      className="cursor-pointer"
-                      onMouseEnter={() => setHoveredNode({ type: "form", id: form.id })}
-                      onMouseLeave={() => setHoveredNode(null)}
-                    >
-                      <circle
-                        cx="650"
-                        cy={cy}
-                        r={isHovered ? "16" : "12"}
-                        fill="#cd9804"
-                        fillOpacity={active ? 1 : 0.15}
-                        stroke="#fff"
-                        strokeWidth="2.5"
-                        filter={isHovered ? "url(#glow-gold)" : ""}
-                        className="transition-all duration-300"
-                      />
-                      <text
-                        x="670"
-                        y={cy + 4}
-                        textAnchor="start"
-                        fill={active ? "#111827" : "#9ca3af"}
-                        className={`text-[10.5px] font-bold transition-colors select-none ${isHovered ? "fill-brand-gold font-extrabold" : ""}`}
-                      >
-                        {form.title.length > 25 ? form.title.slice(0, 25) + "…" : form.title}
-                      </text>
-
-                      {/* DRAG HANDLE FOR FORM (to connect to Domain or Procedure) */}
-                      {isHovered && !draggingLink && (
-                        <circle
-                          cx="635"
-                          cy={cy}
-                          r="5.5"
-                          fill="#cd9804"
-                          className="cursor-crosshair fill-amber-500 hover:fill-amber-600 transition-all duration-150 active:scale-125"
-                          onMouseDown={(e) => handleMouseDown(e, "form", form.id, 635, cy)}
-                        >
-                          <title>Drag to connect to a Domain or Procedure</title>
-                        </circle>
-                      )}
-                    </g>
-                  );
-                })}
-              </g>
-            </svg>
           </div>
         </div>
+
+        {/* Detail Panel */}
+        <div className="flex-1 min-w-0">
+
+          {/* ── DOMAINS SECTION ─────────────────────────── */}
+          {activeSection === "domains" && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <Folder size={16} className="text-brand-red" />
+                    Clinical Domains
+                  </h2>
+                  <p className="text-[11.5px] text-gray-400 mt-0.5">
+                    Organize your curriculum into root domains and sub-domains.
+                  </p>
+                </div>
+                <CreateDomainModalTrigger domains={domains} />
+              </div>
+
+              <div className="p-4">
+                {rootDomains.length === 0 ? (
+                  <EmptyState
+                    icon={<Folder size={28} />}
+                    title="No domains yet"
+                    description="Create your first clinical domain to start organizing your curriculum."
+                    action={<CreateDomainModalTrigger domains={domains} />}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {rootDomains.map((root) => {
+                      const rootChildren = domains.filter((d) => d.parentId === root.id);
+                      const linkedProcedures = procedures.filter((p) => p.domainId === root.id);
+                      const linkedForms = forms.filter((f) => f.domainId === root.id);
+
+                      return (
+                        <div
+                          key={root.id}
+                          className="rounded-xl border border-gray-200 overflow-hidden hover:border-gray-300 transition-colors"
+                        >
+                          {/* Root Domain Row */}
+                          <div className="flex items-center gap-3 px-4 py-3 bg-gray-50/60">
+                            <FolderOpen size={16} className="text-brand-red shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[13.5px] font-bold text-gray-900 truncate">{root.name}</p>
+                            </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              {linkedProcedures.length > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                                  <BookOpen size={8} /> {linkedProcedures.length} proc.
+                                </span>
+                              )}
+                              {linkedForms.length > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full">
+                                  <FileText size={8} /> {linkedForms.length} forms
+                                </span>
+                              )}
+                              {rootChildren.length > 0 && (
+                                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-gray-500 bg-gray-100 border border-gray-200 px-2 py-0.5 rounded-full">
+                                  <Folder size={8} /> {rootChildren.length} sub
+                                </span>
+                              )}
+                              <DeleteButton onConfirm={() => handleDeleteDomain(root.id)} label="domain" />
+                            </div>
+                          </div>
+
+                          {/* Sub-domains */}
+                          {rootChildren.length > 0 && (
+                            <div className="divide-y divide-gray-100">
+                              {rootChildren.map((child) => {
+                                const childProcs = procedures.filter((p) => p.domainId === child.id);
+                                const childForms = forms.filter((f) => f.domainId === child.id);
+                                return (
+                                  <div key={child.id} className="flex items-center gap-3 pl-8 pr-4 py-2.5 hover:bg-gray-50/60 transition-colors">
+                                    <ChevronRight size={11} className="text-gray-300 shrink-0" />
+                                    <Folder size={13} className="text-gray-400 shrink-0" />
+                                    <span className="flex-1 text-[12.5px] font-medium text-gray-700 truncate">{child.name}</span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      {childProcs.length > 0 && (
+                                        <span className="text-[10px] font-semibold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded-full">
+                                          {childProcs.length} proc.
+                                        </span>
+                                      )}
+                                      {childForms.length > 0 && (
+                                        <span className="text-[10px] font-semibold text-blue-600 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded-full">
+                                          {childForms.length} forms
+                                        </span>
+                                      )}
+                                      <DeleteButton onConfirm={() => handleDeleteDomain(child.id)} label="sub-domain" />
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── PROCEDURES SECTION ──────────────────────── */}
+          {activeSection === "procedures" && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <BookOpen size={16} className="text-amber-500" />
+                    Procedures
+                  </h2>
+                  <p className="text-[11.5px] text-gray-400 mt-0.5">
+                    Manage procedures and link them to their clinical domains.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <CreateCategoryModalTrigger />
+                  <CreateProcedureModalTrigger categories={procedureTypes} />
+                </div>
+              </div>
+
+              <div className="p-4">
+                {procedures.length === 0 ? (
+                  <EmptyState
+                    icon={<BookOpen size={28} />}
+                    title="No procedures yet"
+                    description="Add procedures and map them to clinical domains to build your curriculum."
+                    action={<CreateProcedureModalTrigger categories={procedureTypes} />}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-4">
+                    {/* Unmapped section first if any */}
+                    {unmappedProcedures.length > 0 && (
+                      <div>
+                        <div className="flex items-center gap-2 mb-2 px-1">
+                          <AlertTriangle size={12} className="text-orange-400" />
+                          <p className="text-[11px] font-bold text-orange-500 uppercase tracking-wider">
+                            Unmapped ({unmappedProcedures.length})
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {unmappedProcedures.map((proc) => (
+                            <ProcedureCard
+                              key={proc.id}
+                              proc={proc}
+                              domains={domains}
+                              onEdit={() => setEditingProcedure(proc)}
+                              onDelete={() => handleDeleteProcedure(proc.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Grouped by category */}
+                    {Object.entries(proceduresByCategory)
+                      .sort(([a], [b]) => a.localeCompare(b))
+                      .map(([category, procs]) => {
+                        const mappedProcs = procs.filter((p) => p.domainId);
+                        if (mappedProcs.length === 0) return null;
+                        return (
+                          <div key={category}>
+                            <div className="flex items-center gap-2 mb-2 px-1">
+                              <Tag size={11} className="text-gray-400" />
+                              <p className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                                {category}
+                              </p>
+                              <Badge count={mappedProcs.length} color="gray" />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                              {mappedProcs.map((proc) => (
+                                <ProcedureCard
+                                  key={proc.id}
+                                  proc={proc}
+                                  domains={domains}
+                                  onEdit={() => setEditingProcedure(proc)}
+                                  onDelete={() => handleDeleteProcedure(proc.id)}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── FORMS SECTION ───────────────────────────── */}
+          {activeSection === "forms" && (
+            <div className="bg-white rounded-2xl border border-gray-200 shadow-xs overflow-hidden">
+              <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+                    <FileText size={16} className="text-blue-500" />
+                    Evaluation Forms
+                  </h2>
+                  <p className="text-[11.5px] text-gray-400 mt-0.5">
+                    Create evaluation sheets and link them to domains or procedures.
+                  </p>
+                </div>
+                <CreateFormConfigModalTrigger domains={domains} />
+              </div>
+
+              <div className="p-4">
+                {forms.length === 0 ? (
+                  <EmptyState
+                    icon={<FileText size={28} />}
+                    title="No evaluation forms yet"
+                    description="Create your first evaluation form and map it to a clinical domain or procedure."
+                    action={<CreateFormConfigModalTrigger domains={domains} />}
+                  />
+                ) : (
+                  <div className="flex flex-col gap-3">
+                    {/* Unmapped forms */}
+                    {unmappedForms.length > 0 && (
+                      <div className="mb-1">
+                        <div className="flex items-center gap-2 mb-2 px-1">
+                          <AlertTriangle size={12} className="text-orange-400" />
+                          <p className="text-[11px] font-bold text-orange-500 uppercase tracking-wider">
+                            Unmapped ({unmappedForms.length})
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          {unmappedForms.map((form) => (
+                            <FormCard
+                              key={form.id}
+                              form={form}
+                              onEdit={() => setEditingForm(form)}
+                              onDelete={() => handleDeleteForm(form.id)}
+                            />
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Mapped forms */}
+                    {forms.filter((f) => f.domainId || f.procedureId).length > 0 && (
+                      <div>
+                        {unmappedForms.length > 0 && (
+                          <div className="flex items-center gap-2 mb-2 px-1">
+                            <CheckCircle2 size={12} className="text-green-500" />
+                            <p className="text-[11px] font-bold text-green-600 uppercase tracking-wider">
+                              Mapped ({forms.filter((f) => f.domainId || f.procedureId).length})
+                            </p>
+                          </div>
+                        )}
+                        <div className="flex flex-col gap-2">
+                          {forms
+                            .filter((f) => f.domainId || f.procedureId)
+                            .map((form) => (
+                              <FormCard
+                                key={form.id}
+                                form={form}
+                                onEdit={() => setEditingForm(form)}
+                                onDelete={() => handleDeleteForm(form.id)}
+                              />
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* ── Edit Procedure Mapping Modal ─── */}
+      {editingProcedure && (
+        <DialogModal
+          isOpen={!!editingProcedure}
+          onOpenChange={(open) => !open && setEditingProcedure(null)}
+          title={`Map Procedure: ${editingProcedure.name}`}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-xs text-gray-500">
+              Select the Clinical Competency Domain that this procedure belongs to.
+            </p>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12.5px] font-semibold text-gray-600">Clinical Domain</label>
+              <select
+                value={editingProcedure.domainId || "unmapped"}
+                onChange={(e) => {
+                  handleProcedureDomainChange(editingProcedure.id, e.target.value);
+                  setEditingProcedure(null);
+                }}
+                className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-pointer"
+              >
+                <option value="unmapped">— Unmapped —</option>
+                {domains.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.parentId ? "↳ " : ""}{d.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+        </DialogModal>
       )}
+
+      {/* ── Edit Form Mapping Modal ─── */}
+      {editingForm && (
+        <DialogModal
+          isOpen={!!editingForm}
+          onOpenChange={(open) => !open && setEditingForm(null)}
+          title={`Map Form: ${editingForm.title}`}
+        >
+          <div className="flex flex-col gap-4">
+            <p className="text-xs text-gray-500">
+              Link this evaluation sheet to a Clinical Domain or a specific Procedure.
+            </p>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12.5px] font-semibold text-gray-600">Clinical Domain</label>
+                <select
+                  value={editingForm.domainId || "unmapped"}
+                  onChange={(e) => {
+                    handleFormMappingsChange(
+                      editingForm.id,
+                      e.target.value,
+                      editingForm.procedureId || "unmapped"
+                    );
+                    setEditingForm((prev) => prev ? { ...prev, domainId: e.target.value === "unmapped" ? null : e.target.value } : null);
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-pointer"
+                >
+                  <option value="unmapped">— Unmapped —</option>
+                  {domains.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.parentId ? "↳ " : ""}{d.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12.5px] font-semibold text-gray-600">Procedure</label>
+                <select
+                  value={editingForm.procedureId || "unmapped"}
+                  onChange={(e) => {
+                    handleFormMappingsChange(
+                      editingForm.id,
+                      editingForm.domainId || "unmapped",
+                      e.target.value
+                    );
+                    setEditingForm((prev) => prev ? { ...prev, procedureId: e.target.value === "unmapped" ? null : e.target.value } : null);
+                  }}
+                  className="w-full px-3.5 py-2.5 text-sm text-gray-900 bg-gray-50 border border-gray-200 rounded-lg outline-none focus:bg-white focus:border-brand-red focus:ring-2 focus:ring-brand-red/10 cursor-pointer"
+                >
+                  <option value="unmapped">— Unmapped —</option>
+                  {procedures.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <button
+              onClick={() => setEditingForm(null)}
+              className="mt-1 px-4 py-2 text-sm font-semibold text-white bg-brand-red hover:bg-[#8a0606] rounded-lg transition-colors cursor-pointer self-start"
+            >
+              Done
+            </button>
+          </div>
+        </DialogModal>
+      )}
+    </div>
+  );
+}
+
+// ─── Procedure Card ────────────────────────────────────────────────────────────
+
+function ProcedureCard({
+  proc,
+  domains,
+  onEdit,
+  onDelete,
+}: {
+  proc: ProcedureRow;
+  domains: DomainRow[];
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xs transition-all group">
+      <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center shrink-0">
+        <Activity size={14} className="text-amber-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-gray-900 truncate">{proc.name}</p>
+        <div className="flex items-center flex-wrap gap-1.5 mt-1">
+          <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+            {proc.type.name}
+          </span>
+          {proc.domain ? (
+            <MappingChip icon={null} label={proc.domain.name} variant="domain" />
+          ) : (
+            <MappingChip icon={null} label="" variant="unmapped" />
+          )}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={onEdit}
+          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all cursor-pointer"
+          title="Edit Mapping"
+        >
+          <Settings size={13} />
+        </button>
+        <DeleteButton onConfirm={onDelete} label="procedure" />
+      </div>
+    </div>
+  );
+}
+
+// ─── Form Card ─────────────────────────────────────────────────────────────────
+
+function FormCard({
+  form,
+  onEdit,
+  onDelete,
+}: {
+  form: FormRow;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div className="flex items-center gap-3 px-4 py-3 rounded-xl border border-gray-200 bg-white hover:border-gray-300 hover:shadow-xs transition-all group">
+      <div className="w-8 h-8 rounded-lg bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+        <FileText size={14} className="text-blue-600" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-[13px] font-semibold text-gray-900 truncate">{form.title}</p>
+        <div className="flex items-center flex-wrap gap-1.5 mt-1">
+          <span className="text-[10px] font-medium text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded">
+            {form.questions.length} criteria
+          </span>
+          {form.domain && <MappingChip icon={null} label={form.domain.name} variant="domain" />}
+          {form.procedure && <MappingChip icon={null} label={form.procedure.name} variant="procedure" />}
+          {!form.domain && !form.procedure && <MappingChip icon={null} label="" variant="unmapped" />}
+        </div>
+      </div>
+      <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={onEdit}
+          className="p-1.5 text-gray-400 hover:text-gray-700 hover:bg-gray-100 rounded-md transition-all cursor-pointer"
+          title="Edit Mapping"
+        >
+          <Settings size={13} />
+        </button>
+        <DeleteButton onConfirm={onDelete} label="form" />
+      </div>
     </div>
   );
 }
